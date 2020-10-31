@@ -1,46 +1,36 @@
 (function(module) {
 
 	const {
-		CssBaseline,
-		ThemeProvider,
-		Typography,
-		Container,
-		makeStyles,
-		
-		Box,
-	
 		AppBar,
-		Toolbar,
-		
-		
 		BottomNavigation,
 		BottomNavigationAction,
-
-		FormGroup,
+		Box,
+		CircularProgress,
+		Container,
+		CssBaseline,
+		ExpansionPanel,
+		ExpansionPanelDetails,
+		ExpansionPanelSummary,
 		FormControl,
 		FormControlLabel,
-		Switch,
-		TextField,
+		FormGroup,
+		Grid,
+		IconButton,
 		MenuItem,
 		Snackbar,
-
+		Switch,
 		Table,
-		TableHead,
 		TableBody,
-		TableRow,
 		TableCell,
 		TableContainer,
+		TableHead,
+		TableRow,
+		TextField,
+		ThemeProvider,
+		Toolbar,
+		Typography,
 
-		CircularProgress,
-		
-		Grid,
-
-		ExpansionPanel,
-		ExpansionPanelSummary,
-		ExpansionPanelDetails,
-		ExpansionPanelActions,
-
-		IconButton
+		makeStyles
 
 	} = MaterialUI;
 
