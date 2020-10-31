@@ -934,6 +934,14 @@
 				state:      []
 			};
 
+			var readonly      = props.readonly === true;
+			var canCheckOut   = true;
+			var canPlaceAsset = true;
+			var canLock       = true;
+			var canUnlock     = true;
+			var canUpload     = cef.controller.getActiveDocument() != null && !readonly;
+			var canExport     = !readonly;
+
 			for(const asset of sortedAssets) {
 				if(asset.selected) {
 					selectionCount++;
@@ -945,6 +953,11 @@
 					selectionProps.locked.push(asset.checkedOut);
 					selectionProps.version.push(asset.version);
 					selectionProps.state.push(asset.state);
+					
+					canCheckOut   = canCheckOut && asset.type == "Document" && cef.controller.isSupportedDocumentType(asset.contentType);
+					canPlaceAsset = canPlaceAsset && asset.type == "Document" && cef.controller.isSupportedLinkType(asset.contentType);
+					canLock       = canLock && !asset.checkedOut && asset.type == "Document";
+					canUnlock     = canUnlock && asset.checkedOut;
 				}
 
 				var image    = null;
@@ -980,13 +993,10 @@
 								</TableRow>);
 			}
 
-			var readonly      = props.readonly === true;
-			var canCheckOut   = selectionCount == 1 && cef.controller.isSupportedDocumentType(selectionProps.type[0]);
-			var canPlaceAsset = selectionCount == 1 && cef.controller.isSupportedLinkType(selectionProps.type[0]);
-			var canLock       = selectionCount == 1 && !selectionProps.locked[0] && selectionProps.type[0] != "Folder";
-			var canUnlock     = selectionCount == 1 && selectionProps.locked[0];
-			var canUpload     = cef.controller.getActiveDocument() != null && !readonly;
-			var canExport     = !readonly;
+			canCheckOut   = canCheckOut && selectionCount > 0;
+			canPlaceAsset = canPlaceAsset && selectionCount > 0;
+			canLock       = canLock && selectionCount > 0;
+			canUnlock     = canUnlock && selectionCount > 0;
 
 			return (<Box className={classes.root}>
 				<TableContainer component={Box} className={classes.viewport}>
