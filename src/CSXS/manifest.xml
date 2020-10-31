@@ -1,0 +1,51 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<ExtensionManifest ExtensionBundleId="com.dalim.extensions.cc" ExtensionBundleVersion="1.0.0" Version="6.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <ExtensionList>
+        <Extension Id="com.dalim.extensions.cc.panel" Version="1.0.0"/>
+    </ExtensionList>
+    <ExecutionEnvironment>
+        <HostList>
+            <Host Name="IDSN" Version="14"/>
+            <Host Name="PHSP" Version="20"/>
+			<Host Name="PHXS" Version="20"/>
+			<Host Name="ILST" Version="23"/>
+        </HostList>
+        <LocaleList>
+            <Locale Code="All" />
+        </LocaleList>
+    </ExecutionEnvironment>
+    <DispatchInfoList>
+        <Extension Id="com.dalim.extensions.cc.panel">
+            <DispatchInfo>
+                <Resources>
+                    <MainPath>./index.html</MainPath>
+                    <CEFCommandLine>
+                        <Parameter>--proxy-auto-detect</Parameter>
+                        <Parameter>--allow-file-access</Parameter>
+						<Parameter>--enable-nodejs</Parameter>
+                        <Parameter>--mixed-context</Parameter>
+                    </CEFCommandLine>
+                </Resources>
+                <UI>
+                    <Type>Panel</Type>
+                    <Menu>DALIM ES</Menu>
+                    <Geometry>
+                        <Size>
+                            <Height>400</Height>
+                            <Width>313</Width>
+                        </Size>
+                        <MaxSize>
+                            <Height>1200</Height>
+                            <Width>1200</Width>
+                        </MaxSize>
+                        <MinSize>
+                            <Height>200</Height>
+                            <Width>313</Width>
+                        </MinSize>
+                    </Geometry>
+                    <Icons></Icons>
+                </UI>
+            </DispatchInfo>
+        </Extension>
+    </DispatchInfoList>
+</ExtensionManifest>

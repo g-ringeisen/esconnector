@@ -1,0 +1,59 @@
+<!doctype html>
+<html style="height: 100%;">
+    <head>
+		<title>ES Connector</title>
+        <meta http-equiv="cache-control" content="max-age=0">
+        <meta http-equiv="cache-control" content="no-cache">
+        <meta http-equiv="expires" content="-1">
+		<meta http-equiv="pragma" content="no-cache">
+		<meta name="viewport" content="width=450, initial-scale=1">
+
+		<!-- React JS -->
+		<script type="text/javascript" src="./lib/react-16.13/react.development.js"></script>
+		<script type="text/javascript" src="./lib/react-16.13/react-dom.development.js"></script>
+		
+		<!-- Material UI -->
+		<script src="./lib/material-ui-4.9.12/material-ui.development.js" crossorigin="anonymous"></script>
+    	<link href="./lib/material-ui-4.9.12/material-ui.css" rel="stylesheet"/>
+		
+		<!-- JavaScript Libraries for the Extension Panel -->
+		<script type="text/javascript" src="./lib/esconnector-1.0.0/esconnector.development.js"></script>
+		
+		<!-- Babel -->
+		<script type="text/javascript" src="./lib/babel-6.26.0/babel.js"></script>
+
+		<!-- Common GUI Components -->
+		<script type="text/babel" src="./gui/hooks.jsx"></script>
+		<script type="text/babel" src="./gui/icons.jsx"></script>
+		<script type="text/babel" src="./gui/theme.jsx"></script>
+		<!-- Application GUI -->
+		<script type="text/babel" src="./gui/application.jsx"></script>
+		<!-- Login GUI -->
+		<script type="text/babel" src="./gui/index.jsx"></script>
+		<!-- Translations -->
+		<script type="text/babel" src="./gui/locale.jsx"></script>
+		
+		<script>
+			window.cef.on("ready", function() {
+				if(window.cef.repository) {
+					window.cef.repository.connect(function() {
+						if(window.cef.repository.connected) {
+							ReactDOM.render(React.createElement(ApplicationGUI), document.getElementById('d-container'));
+						} else {
+							ReactDOM.render(React.createElement(IndexGUI), document.getElementById('d-container'));
+						}
+					});
+				} else {
+					ReactDOM.render(React.createElement(IndexGUI), document.getElementById('d-container'));
+				}
+			});
+		</script>
+
+	</head>
+
+	<body style="height: 100%;">
+		<div id="d-container" style="height: 100%;">
+			<!-- CONTAINER -->
+		</div>
+	</body>
+</html>
