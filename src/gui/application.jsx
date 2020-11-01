@@ -174,30 +174,30 @@
 
 			return (<Container className={classes.root}>
 
-				<Typography className={classes.h6} variant="h6">Preferences</Typography>
+				<Typography className={classes.h6} variant="h6">{cef.locale.get("Preferences")}</Typography>
 				<FormGroup>
 				<FormControl>
 						<FormControlLabel
 							control={<Switch checked={prefState["AutoSave"]} onChange={(e,v) => setPreference("AutoSave", v)} color="primary"/>}
-							label="Auto save on upload"/>
+							label={cef.locale.get("AutoSave")}/>
 					</FormControl>
 					<FormControl>
 						<FormControlLabel
 							control={<Switch checked={prefState["UseHighResolution"]} onChange={(e,v) => setPreference("UseHighResolution", v)} color="primary"/>}
-							label="Use high resolution images"/>
+							label={cef.locale.get("UseHighResolution")}/>
 					</FormControl>
-					<TextField select label="PDF Export Preset" value={presets.includes(prefState["PDFExportPreset"]) ? prefState["PDFExportPreset"] : "ASK"} onChange={(e) => setPreference("PDFExportPreset", e.target.value)}>
+					<TextField select label={cef.locale.get("PDFExportPreset")} value={presets.includes(prefState["PDFExportPreset"]) ? prefState["PDFExportPreset"] : "ASK"} onChange={(e) => setPreference("PDFExportPreset", e.target.value)}>
 						<MenuItem key="ASK" value="ASK">Ask...</MenuItem>
 						{presets.map((preset) => (<MenuItem key={preset} value={preset}>{preset}</MenuItem>))}
 					</TextField>
 				</FormGroup>
 				
-				<Typography className={classes.h6} variant="h6">Connection</Typography>
+				<Typography className={classes.h6} variant="h6">{cef.locale.get("Connection")}</Typography>
 				<Table size="small" padding="none">
 					<TableBody>
 						<TableRow>
 							<TableCell>
-								<Typography variant="body1">Repository</Typography>
+								<Typography variant="body1">{cef.locale.get("Repository")}</Typography>
 							</TableCell>
 							<TableCell align="right">
 								<Typography variant="body1">{cef.controller.getRepositoryName()}</Typography>
@@ -210,7 +210,7 @@
 						</TableRow>
 						<TableRow>
 							<TableCell>
-								<Typography variant="body1">Account</Typography>
+								<Typography variant="body1">{cef.locale.get("Account")}</Typography>
 							</TableCell>
 							<TableCell align="right">
 								<Typography variant="body1">{cef.controller.getAccountName() || "-"}</Typography>
@@ -224,12 +224,12 @@
 					</TableBody>
 				</Table>
 
-				<Typography className={classes.h6} variant="h6">Cache</Typography>
+				<Typography className={classes.h6} variant="h6">{cef.locale.get("Cache")}</Typography>
 				<Table size="small" padding="none">
 					<TableBody>
 						<TableRow>
 							<TableCell>
-								<Typography variant="body1">Folder</Typography>
+								<Typography variant="body1">{cef.locale.get("Folder")}</Typography>
 							</TableCell>
 							<TableCell align="right">
 								<Typography variant="body1">{cacheFolder}</Typography>
@@ -242,7 +242,7 @@
 						</TableRow>
 						<TableRow>
 							<TableCell>
-								<Typography variant="body1">Size</Typography>
+								<Typography variant="body1">{cef.locale.get("Size")}</Typography>
 							</TableCell>
 							<TableCell align="right">
 								<Typography variant="body1">{readableSize(cacheSize)}</Typography>
@@ -534,7 +534,7 @@
 					<Table stickyHeader size="small">
 					<TableHead>
 						<TableRow>
-							<TableCell colSpan={2}>Document links</TableCell>
+							<TableCell colSpan={2}>{cef.locale.get("DocumentLinks")}</TableCell>
 							<TableCell align="center">&nbsp;</TableCell>
 							<TableCell align="center">&nbsp;</TableCell>
 							<TableCell>&nbsp;</TableCell>
@@ -548,7 +548,7 @@
 				</TableContainer>
 				<ExpansionPanel className={classes.toolbar} square expanded={expanded}>
 					<ExpansionPanelSummary expandIcon={<ExpandIcon fontSize="inherit"/>} IconButtonProps={{onClick: () => setExpanded(!expanded)}}>
-						<Box className={classes.summaryLabel}><Typography>{selectionCount > 0 ? selectionCount + " selected" : ""}</Typography></Box>
+						<Box className={classes.summaryLabel}><Typography>{selectionCount > 0 ? selectionCount + " " + cef.locale.get("selected") : ""}</Typography></Box>
 						<IconButton disabled={!canToggleRendition} color="secondary" onClick={(event) => dispatchAction(event, globalRenditionAction)}>
 							{globalRenditionAction == "setLinkHighres" ? <HighresIcon/> : <LowresIcon/>}
 						</IconButton>
@@ -565,49 +565,49 @@
 					<ExpansionPanelDetails className={classes.infopane}>
 						<Grid container spacing={1}>
 							<Grid item xs={4}>
-								<Typography>File name :</Typography>
+								<Typography>{cef.locale.get("FileName")} :</Typography>
 							</Grid>
 							<Grid item xs={8}>
 								<Typography className={classes.value}>{_defaultTransformFunction(_defaultMergeFunction(selectionProps.name))}</Typography>
 							</Grid>
 							<Grid item xs={4}>
-								<Typography>File size :</Typography>
+								<Typography>{cef.locale.get("FileSize")} :</Typography>
 							</Grid>
 							<Grid item xs={8}>
 								<Typography className={classes.value}>{_defaultTransformFunction(readableSize(_defaultMergeFunction(selectionProps.size)))}</Typography>
 							</Grid>
 							<Grid item xs={4}>
-								<Typography>File path :</Typography>
+								<Typography>{cef.locale.get("FilePath")} :</Typography>
 							</Grid>
 							<Grid item xs={8}>
 								<Typography className={classes.value}>{_defaultTransformFunction(_defaultMergeFunction(selectionProps.path))}</Typography>
 							</Grid>
 							<Grid item xs={4}>
-								<Typography>Asset ID :</Typography>
+								<Typography>{cef.locale.get("AssetID")} :</Typography>
 							</Grid>
 							<Grid item xs={8}>
 								<Typography className={classes.value}>{_defaultTransformFunction(_defaultMergeFunction(selectionProps.assetId))}</Typography>
 							</Grid>
 							<Grid item xs={4}>
-								<Typography>Asset Version :</Typography>
+								<Typography>{cef.locale.get("AssetVersion")} :</Typography>
 							</Grid>
 							<Grid item xs={8}>
 								<Typography className={classes.value}>{_defaultTransformFunction(_defaultMergeFunction(selectionProps.version))}</Typography>
 							</Grid>
 							<Grid item xs={4}>
-								<Typography>Rendition :</Typography>
+								<Typography>{cef.locale.get("Rendition")} :</Typography>
 							</Grid>
 							<Grid item xs={8}>
 								<Typography className={classes.value}>{_defaultTransformFunction(_defaultMergeFunction(selectionProps.rendition))}</Typography>
 							</Grid>
 							<Grid item xs={4}>
-								<Typography>Repository :</Typography>
+								<Typography>{cef.locale.get("Repository")} :</Typography>
 							</Grid>
 							<Grid item xs={8}>
 								<Typography className={classes.value}>{_defaultTransformFunction(_defaultMergeFunction(selectionProps.repository))}</Typography>
 							</Grid>
 							<Grid item xs={4}>
-								<Typography>Location :</Typography>
+								<Typography>{cef.locale.get("Location")} :</Typography>
 							</Grid>
 							<Grid item xs={8}>
 								<Typography className={classes.value}>{_defaultTransformFunction(_defaultMergeFunction(selectionProps.location))}</Typography>
@@ -720,31 +720,31 @@
 				<Container className={classes.infopane}>
 					<Grid container spacing={1}>
 							<Grid item xs={4}>
-								<Typography>Asset ID :</Typography>
+								<Typography>{cef.locale.get("AssetID")} :</Typography>
 							</Grid>
 							<Grid item xs={8}>
 								<Typography className={classes.value}>{_defaultTransformFunction(info.assetId)}</Typography>
 							</Grid>
 							<Grid item xs={4}>
-								<Typography>Asset Version :</Typography>
+								<Typography>{cef.locale.get("AssetVersion")} :</Typography>
 							</Grid>
 							<Grid item xs={8}>
 								<Typography className={classes.value}>{_defaultTransformFunction(info.version)}</Typography>
 							</Grid>
 							<Grid item xs={4}>
-								<Typography>Repository :</Typography>
+								<Typography>{cef.locale.get("Repository")} :</Typography>
 							</Grid>
 							<Grid item xs={8}>
 								<Typography className={classes.value}>{_defaultTransformFunction(info.repository)}</Typography>
 							</Grid>
 							<Grid item xs={4}>
-								<Typography>Location :</Typography>
+								<Typography>{cef.locale.get("Location")} :</Typography>
 							</Grid>
 							<Grid item xs={8}>
 								<Typography className={classes.value}>{_defaultTransformFunction(info.location)}</Typography>
 							</Grid>
 							<Grid item xs={4}>
-								<Typography>Locked by :</Typography>
+								<Typography>{cef.locale.get("LockedBy")} :</Typography>
 							</Grid>
 							<Grid item xs={8}>
 								<Typography className={classes.value}>{_defaultTransformFunction(info.checkOutUser)}</Typography>
@@ -1042,7 +1042,7 @@
 				</TableContainer>
 				<ExpansionPanel className={classes.toolbar} square expanded={expanded}>
 					<ExpansionPanelSummary expandIcon={<ExpandIcon/>} IconButtonProps={{onClick: () => setExpanded(!expanded)}}>
-						<Box className={classes.summaryLabel}><Typography>{selectionCount > 0 ? selectionCount + " selected" : ""}</Typography></Box>
+						<Box className={classes.summaryLabel}><Typography>{selectionCount > 0 ? selectionCount + " " + cef.locale.get("selected") : ""}</Typography></Box>
 						<IconButton disabled={!canCheckOut} color="secondary" onClick={(event) => dispatchAction(event, "checkAssetOut")}>
 							<EditIcon/>
 						</IconButton>
@@ -1055,6 +1055,9 @@
 						<IconButton disabled={!canUpload} color="secondary" onClick={(event) => dispatchAction(event, "uploadDocument")}>
 							<UploadIcon/>
 						</IconButton>
+						<IconButton disabled={!canUpload} color="secondary" onClick={(event) => dispatchAction(event, "uploadAllLocalLinks")}>
+							<UploadAssetIcon/>
+						</IconButton>
 						<IconButton disabled={!canUpload || !canExport} color="secondary" onClick={(event) => dispatchAction(event, "exportDocumentAsPDF")}>
 							<ExportPDFIcon/>
 						</IconButton>
@@ -1062,37 +1065,37 @@
 					<ExpansionPanelDetails className={classes.infopane}>
 						<Grid container spacing={1}>
 							<Grid item xs={4}>
-								<Typography>Asset ID :</Typography>
+								<Typography>{cef.locale.get("AssetID")} :</Typography>
 							</Grid>
 							<Grid item xs={8}>
 								<Typography className={classes.value}>{_defaultTransformFunction(_defaultMergeFunction(selectionProps.id))}</Typography>
 							</Grid>
 							<Grid item xs={4}>
-								<Typography>Asset name :</Typography>
+								<Typography>{cef.locale.get("AssetName")} :</Typography>
 							</Grid>
 							<Grid item xs={8}>
 								<Typography className={classes.value}>{_defaultTransformFunction(_defaultMergeFunction(selectionProps.name))}</Typography>
 							</Grid>
 							<Grid item xs={4}>
-								<Typography>Asset size :</Typography>
+								<Typography>{cef.locale.get("AssetSize")} :</Typography>
 							</Grid>
 							<Grid item xs={8}>
 								<Typography className={classes.value}>{_defaultTransformFunction(readableSize(_defaultMergeFunction(selectionProps.size)))}</Typography>
 							</Grid>
 							<Grid item xs={4}>
-								<Typography>Asset type:</Typography>
+								<Typography>{cef.locale.get("AssetType")} :</Typography>
 							</Grid>
 							<Grid item xs={8}>
 								<Typography className={classes.value}>{_defaultTransformFunction(readableType(_defaultMergeFunction(selectionProps.type)))}</Typography>
 							</Grid>
 							<Grid item xs={4}>
-								<Typography>Asset path :</Typography>
+								<Typography>{cef.locale.get("AssetPath")} :</Typography>
 							</Grid>
 							<Grid item xs={8}>
 								<Typography className={classes.value}>{_defaultTransformFunction(_defaultMergeFunction(selectionProps.path))}</Typography>
 							</Grid>
 							<Grid item xs={4}>
-								<Typography>Asset version :</Typography>
+								<Typography>{cef.locale.get("AssetVersion")} :</Typography>
 							</Grid>
 							<Grid item xs={8}>
 								<Typography className={classes.value}>{_defaultTransformFunction(_defaultMergeFunction(selectionProps.version))}</Typography>
@@ -1437,7 +1440,7 @@
 				setErrorMessage(err.toString());
 			}
 		
-			function handleAction(event, action, docId) {
+			function handleAction(event, action) {
 				if(action == "uploadDocument") {
 					cef.controller.uploadDocument(workingDir.id, (err) => {
 						if(err)
@@ -1460,6 +1463,31 @@
 						if(err)
 							showError(err);
 					});
+				} else if(action == "uploadAllLocalLinks") {
+					var doc = cef.controller.getActiveDocument();
+					if(doc && doc.links != null) {
+						for(const link of doc.links) {
+							if(!link.assetId && !link.missing && link.state == null) {
+								cef.controller.uploadLink(link.id, workingDir.id, (err) => {
+									if(err)
+										showError(err);
+								});
+							}
+						}
+					}
+				} else if(action == "downloadAllMissingLinks") {
+					var repo = cef.controller.getRepositoryName();
+					var doc  = cef.controller.getActiveDocument();
+					if(doc.links && doc.links != null) {
+						for(const link of doc.links) {
+							if(link.assetId && link.repository == repo && link.missing && link.state == null) {
+								cef.controller.downloadLink(linkId, (err) => {
+									if(err)
+										showError(err);
+								});
+							}
+						}
+					}
 				} else if(action == "placeAsset") {
 					event.assetIds.forEach(assetId => {
 						cef.controller.placeAsset(assetId, (err) => {
@@ -1573,9 +1601,9 @@
 			return (
 				<Box className={classes.app}>
 					<BottomNavigation className={classes.nav} value={currentView} onChange={(e,v) => setCurrentView(v)}>
-						<BottomNavigationAction className={classes.tab} size="small" label="Browser"  value="browser" icon={<BrowserIcon fontSize="small"/>} />
-						<BottomNavigationAction className={classes.tab} size="small" label="Document" value="document" icon={<DocumentIcon fontSize="small"/>} />
-						<BottomNavigationAction className={classes.tab} size="small" label="Settings" value="settings" icon={<SettingsIcon fontSize="small"/>} />
+						<BottomNavigationAction className={classes.tab} size="small" label={cef.locale.get("Browser")} value="browser" icon={<BrowserIcon fontSize="small"/>} />
+						<BottomNavigationAction className={classes.tab} size="small" label={cef.locale.get("Document")} value="document" icon={<DocumentIcon fontSize="small"/>} />
+						<BottomNavigationAction className={classes.tab} size="small" label={cef.locale.get("Setting")} value="settings" icon={<SettingsIcon fontSize="small"/>} />
 					</BottomNavigation>
 		
 					{(currentView == "browser") 

@@ -2736,7 +2736,7 @@ function initAdobeCC(initCallback)
 			});
 		}
 	}
-
+	
 	module.controller.uploadLink = function(linkId, path, callback) {
 		callback = callback || DEFAULT_CALLBACK;
 		if(!module.host.document) {
