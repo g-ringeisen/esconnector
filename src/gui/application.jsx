@@ -649,7 +649,7 @@
 
 			var busy          = info.state != null;
 			var canUpload     = !busy && !props.readonly;
-			var canCheckIn    = info.assetId != null && info.repository == cef.controller.getRepositoryName();
+			var canCheckIn    = !busy &&info.assetId != null && info.repository == cef.controller.getRepositoryName();
 			var canLock       = !busy && !info.checkedOut;
 			var canUnlock     = !busy && info.checkedOut && info.checkedOutUser == cef.controller.getAccountName();
 			var canExport     = canUpload;
@@ -953,7 +953,7 @@
 					selectionProps.locked.push(asset.checkedOut);
 					selectionProps.version.push(asset.version);
 					selectionProps.state.push(asset.state);
-					
+
 					canCheckOut   = canCheckOut && asset.type == "Document" && cef.controller.isSupportedDocumentType(asset.contentType);
 					canPlaceAsset = canPlaceAsset && asset.type == "Document" && cef.controller.isSupportedLinkType(asset.contentType);
 					canLock       = canLock && !asset.checkedOut && asset.type == "Document";
@@ -1524,8 +1524,7 @@
 				}
 			});
 		
-			return (<ThemeProvider theme={DarkTheme}>
-				<CssBaseline/>
+			return (
 				<Box className={classes.app}>
 					<BottomNavigation className={classes.nav} value={currentView} onChange={(e,v) => setCurrentView(v)}>
 						<BottomNavigationAction className={classes.tab} size="small" label="Browser"  value="browser" icon={<BrowserIcon fontSize="small"/>} />
@@ -1548,22 +1547,23 @@
 										onSelectionChange={(event, selection) => updateLinkSelection(selection)}
 										readonly={!workingDir || !workingDir.permissions.canCreateDocument}/>)
 						: (<PreferencePanel className={classes.viewport}/>)}
-				</Box>
-				<Snackbar 
-					className={classes.alert}
-					open={errorMessage != null}
-					autoHideDuration={3000} 
-					anchorOrigin={{
-						vertical: 'bottom',
-						horizontal: 'center',
-					}}
-					message={errorMessage}
-					action={<IconButton aria-label="close" color="inherit" onClick={() => setErrorMessage(null)}><CloseIcon/></IconButton>}
-					onClose={() => setErrorMessage(null)}/>
-			</ThemeProvider>);
+
+					<Snackbar className={classes.alert}
+							open={errorMessage != null}
+							autoHideDuration={3000} 
+							anchorOrigin={{
+								vertical: 'bottom',
+								horizontal: 'center',
+							}}
+							message={errorMessage}
+							action={<IconButton aria-label="close" color="inherit" onClick={() => setErrorMessage(null)}><CloseIcon/></IconButton>}
+							onClose={() => setErrorMessage(null)}/>
+				</Box>);
 		};
 	})();
 
-	module.ApplicationGUI = ApplicationGUI;
+	module.ApplicationGUI = function(props) {
+		return (<ThemeProvider theme={getTheme()}><CssBaseline/><ApplicationGUI {...props}/></ThemeProvider>);
+	};
 
 })(window);

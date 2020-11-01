@@ -4,7 +4,7 @@
 	/**
 	 * ES Connector Theme
 	 */
-	module.DarkTheme = MaterialUI.createMuiTheme({
+	const DarkTheme = MaterialUI.createMuiTheme({
 		palette: {
 			type: 'dark',
 			primary: {
@@ -190,5 +190,10 @@
 			}
 		}
 	});
+
+	module.getTheme = function() {
+		// TODO: Detect context and return the appropriate Theme
+		return DarkTheme;
+	};
 
 })(window);

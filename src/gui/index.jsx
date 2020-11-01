@@ -50,7 +50,7 @@
 			
 			function raiseError(err) {
 				if(props.onError)
-					onError(err);
+					props.onError(err);
 				else
 					console.error(err);
 			}
@@ -184,7 +184,7 @@
 
 			function raiseError(err) {
 				if(props.onError)
-					onError(err);
+					props.onError(err);
 				else
 					console.error(err);
 			}
@@ -292,36 +292,34 @@
 			}
 
 			return (
-				<ThemeProvider theme={DarkTheme}>
-					<CssBaseline/>
-					<Box className={classes.root}>
-						<Box className={classes.card}>
-							<img src={props.img || defaultImage}/>
-						</Box>
-						<Container className={classes.overlay}>
-							<Typography variant="h6" color="textSecondary">{props.title || defaultTitle}</Typography>
-						</Container>
-						<Container className={classes.content}>
-							{!cef.repository ? <ConnectPanel onError={showError}/> : <SignInPanel onError={showError}/>}
-						</Container>
-						<Snackbar 
-							className={classes.alert}
-							open={errorMessage != null}
-							autoHideDuration={3000} 
-							anchorOrigin={{
-								vertical: 'bottom',
-								horizontal: 'center',
-							}}
-							message={errorMessage}
-							action={<IconButton aria-label="close" color="inherit" onClick={() => setErrorMessage(null)}><CloseIcon/></IconButton>}
-							onClose={() => setErrorMessage(null)}/>
+				<Box className={classes.root}>
+					<Box className={classes.card}>
+						<img src={props.img || defaultImage}/>
 					</Box>
-				</ThemeProvider>
-			);
+					<Container className={classes.overlay}>
+						<Typography variant="h6" color="textSecondary">{props.title || defaultTitle}</Typography>
+					</Container>
+					<Container className={classes.content}>
+						{!cef.repository ? <ConnectPanel onError={showError}/> : <SignInPanel onError={showError}/>}
+					</Container>
+					<Snackbar 
+						className={classes.alert}
+						open={errorMessage != null}
+						autoHideDuration={3000} 
+						anchorOrigin={{
+							vertical: 'bottom',
+							horizontal: 'center',
+						}}
+						message={errorMessage}
+						action={<IconButton aria-label="close" color="inherit" onClick={() => setErrorMessage(null)}><CloseIcon/></IconButton>}
+						onClose={() => setErrorMessage(null)}/>
+				</Box>);
 		}
 	})();
 
-	module.IndexGUI = IndexGUI;
+	module.IndexGUI = function(props) {
+		return (<ThemeProvider theme={getTheme()}><CssBaseline/><IndexGUI {...props}/></ThemeProvider>);
+	};
 
 })(window);
 
