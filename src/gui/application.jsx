@@ -1,3 +1,4 @@
+
 (function(module) {
 
 	const {
@@ -102,10 +103,13 @@
 			const [presets, updatePresets] = useState([]);
 
 			var cacheFolder = cef.controller.getCacheFolder();
+
 			const [cacheSize, updateCacheSize] = useState(0);
+			const [clearing,  setClearing]     = useState(false);
+
 			const isMounted = useIsMounted();
 
-			useInterval(() => {
+			useEffect(() => {
 				cef.controller.getPDFExportPresets((err, names) => {
 					if(err) {
 						// Silent Fail
@@ -122,7 +126,7 @@
 						updateCacheSize(size);
 					}
 				});
-			}, 1000, true);
+			});
 
 			function setPreference(name, value) {
 				cef.prefs.set(name, value);
@@ -151,9 +155,20 @@
 			}
 
 			function clearCache() {
+				setClearing(true);
 				cef.controller.clearCache((err) => {
-					if(err)
+					setClearing(false);
+					if(err) {
 						console.error(err);
+					} else {
+						cef.controller.getCacheSize((err, size) => {
+							if(err) {
+								console.error(err);
+							} else if(isMounted()) {
+								updateCacheSize(size);
+							}
+						});
+					}
 				});
 			}
 
@@ -233,7 +248,7 @@
 								<Typography variant="body1">{readableSize(cacheSize)}</Typography>
 							</TableCell>
 							<TableCell align="right">
-								<IconButton disableRipple onClick={clearCache}>
+								<IconButton disableRipple onClick={clearCache} disabled={clearing}>
 									<TrashIcon fontSize="inherit"/>
 								</IconButton>
 							</TableCell>
@@ -406,10 +421,13 @@
 			}
 
 			var globalRenditionAction = null;
-			var globalSynchAction     = null;
+			var canToggleRendition    = true;
+			var canDownload           = true;
+			var canUpload             = true;
+			var canCheckIn            = true;
+			var canGoto               = true;
 
 			var tableRows      = [];
-			var validSelection = true;
 			var selectionCount = 0;
 			var selectionProps = {
 				name:       [],
@@ -428,9 +446,10 @@
 				var renditionAction = null;
 				var synchIcon       = null;
 				var synchAction     = null;
+				var sameRepository  = cef.controller.getRepositoryName() == link.repository;
 				var busy            = link.state != null;
 
-				if(cef.controller.getRepositoryName() == link.repository) {
+				if(sameRepository) {
 					if(!link.rendition || link.rendition == "dalim:highresolution") {
 						renditionIcon   = <HighresIcon className={classes.linkIcon} color={busy ? "disabled" : "secondary"}/>;
 						renditionAction = !busy ? "setLinkLowres" : null;
@@ -438,10 +457,20 @@
 						renditionIcon   = <LowresIcon className={classes.linkIcon} color={busy ? "disabled" : "secondary"}/>;
 						renditionAction = !busy ? "setLinkHighres" : null;
 					}
-					if(link.missing || link.outdated) {
+
+					if(link.edited && link.outdated) {
+						synchIcon   = <AlertIcon className={classes.linkIcon} color={busy ? "disabled" : "secondary"}/>;
+						synchAction = null;
+					} else if(link.missing || link.outdated) {
 						synchIcon   = <CheckOutIcon className={classes.linkIcon} color={busy ? "disabled" : "secondary"}/>;
 						synchAction = !busy ? "downloadLink" : null;
+					} else if(link.edited) {
+						synchIcon   = <CheckInIcon className={classes.linkIcon} color={busy ? "disabled" : "secondary"}/>;
+						synchAction = !busy ? "checkLinkIn" : null;
 					}
+				} else if(!link.assetId && !link.missing) {
+					synchIcon   = <UploadIcon className={classes.linkIcon} color={busy || props.readonly ? "disabled" : "secondary"}/>;
+					synchAction = !busy && !props.readonly ? "uploadLink" : null;
 				}
 
 				if(link.selected) {
@@ -455,15 +484,14 @@
 					selectionProps.repository.push(link.repository);
 					selectionProps.location.push(link.location);
 
-					if(selectionCount == 1) {
+					if(globalRenditionAction == null && renditionAction != null)
 						globalRenditionAction = renditionAction;
-						globalSynchAction     = synchAction;
-					} else {
-						if(globalSynchAction != synchAction)
-							globalSynchAction = null;
-					}
 
-					validSelection = validSelection && !busy && cef.controller.getRepositoryName() == link.repository;
+					canToggleRendition = canToggleRendition && selectionCount > 0;
+					canDownload        = canDownload && !busy && sameRepository && synchAction == "downloadLink";
+					canUpload          = canUpload && !busy && synchAction == "uploadLink";
+					canCheckIn         = canCheckIn && !busy && sameRepository && synchAction == "checkLinkIn";
+					canGoto            = canGoto && sameRepository;
 				}
 
 				var preview  = null;
@@ -495,11 +523,11 @@
 								</TableRow>);
 			}
 
-			validSelection = validSelection && (selectionCount > 0);
-
-			var enableRenditionButton = validSelection && globalRenditionAction != null;
-			var enableSynchButton     = validSelection && globalSynchAction != null;
-			var enableGotoButton      = selectionCount == 1 && selectionProps.repository[0] == cef.controller.getRepositoryName();
+			canToggleRendition = canToggleRendition && selectionCount > 0;
+			canDownload        = canDownload && selectionCount > 0;
+			canUpload          = canUpload && selectionCount > 0;
+			canCheckIn         = canCheckIn && selectionCount > 0;
+			canGoto            = selectionCount == 1 && selectionProps.repository[0] == cef.controller.getRepositoryName();
 
 			return (<Box className={classes.root + " " + props.className}>
 				<TableContainer component={Box} className={classes.viewport}>
@@ -521,13 +549,16 @@
 				<ExpansionPanel className={classes.toolbar} square expanded={expanded}>
 					<ExpansionPanelSummary expandIcon={<ExpandIcon fontSize="inherit"/>} IconButtonProps={{onClick: () => setExpanded(!expanded)}}>
 						<Box className={classes.summaryLabel}><Typography>{selectionCount > 0 ? selectionCount + " selected" : ""}</Typography></Box>
-						<IconButton disabled={!enableRenditionButton} color="secondary" onClick={(event) => dispatchAction(event, globalRenditionAction)}>
+						<IconButton disabled={!canToggleRendition} color="secondary" onClick={(event) => dispatchAction(event, globalRenditionAction)}>
 							{globalRenditionAction == "setLinkHighres" ? <HighresIcon/> : <LowresIcon/>}
 						</IconButton>
-						<IconButton disabled={!enableSynchButton} color="secondary" onClick={(event) => dispatchAction(event, globalSynchAction)}>
-							{globalSynchAction == "downloadLink" ? <CheckOutIcon/> : <CheckOutIcon/>}
+						<IconButton disabled={!canDownload} color="secondary" onClick={(event) => dispatchAction(event, "downloadLink")}>
+							<CheckOutIcon/>
 						</IconButton>
-						<IconButton disabled={!enableGotoButton} color="secondary" onClick={(event) => dispatchAction(event, "showAsset")}>
+						<IconButton disabled={!canUpload && !canCheckIn} color="secondary" onClick={(event) => dispatchAction(event, canUpload ? "uploadLink" : "checkLinkIn")}>
+							{canUpload ? <UploadIcon/> : <CheckInIcon/>}
+						</IconButton>
+						<IconButton disabled={!canGoto} color="secondary" onClick={(event) => dispatchAction(event, "showAsset")}>
 							<GotoIcon/>
 						</IconButton>
 					</ExpansionPanelSummary>
@@ -645,15 +676,18 @@
 			const classes = useStyles(); 
 
 			var info  = props.info;
-			var links = props.links;
 
 			var busy          = info.state != null;
 			var canUpload     = !busy && !props.readonly;
 			var canCheckIn    = !busy &&info.assetId != null && info.repository == cef.controller.getRepositoryName();
 			var canLock       = !busy && !info.checkedOut;
-			var canUnlock     = !busy && info.checkedOut && info.checkedOutUser == cef.controller.getAccountName();
+			var canUnlock     = !busy && info.checkedOut;
 			var canExport     = canUpload;
 			var canGoto       = info.assetId != null && info.repository == cef.controller.getRepositoryName();
+
+			useEffect(() => {
+				cef.controller.updateDocumentMetadata();
+			}, [props.info]);
 
 			function dispatchDocumentAction(event, action) {
 				if(typeof props.onDocumentAction == 'function') {
@@ -713,7 +747,7 @@
 								<Typography>Locked by :</Typography>
 							</Grid>
 							<Grid item xs={8}>
-								<Typography className={classes.value}>{_defaultTransformFunction(info.checkedOutUser)}</Typography>
+								<Typography className={classes.value}>{_defaultTransformFunction(info.checkOutUser)}</Typography>
 							</Grid>
 						</Grid>
 				</Container>
@@ -726,7 +760,7 @@
 						<CheckInIcon/>
 					</IconButton>
 					<IconButton disabled={!canLock && !canUnlock} color="secondary" onClick={(event) => dispatchDocumentAction(event, canLock ? "lockDocument" : "unlockDocument")}>
-						{info.checkedOut ? (<UnockIcon/>) : (<LockIcon/>)}
+						{info.checkedOut ? (<UnlockIcon/>) : (<LockIcon/>)}
 					</IconButton>
 					<IconButton color="secondary" disabled={!canExport} onClick={(event) => dispatchDocumentAction(event, "exportDocumentAsPDF")}>
 						<ExportPDFIcon/>
@@ -735,7 +769,7 @@
 						<GotoIcon/>
 					</IconButton>
 				</Container>
-				{links != null ? (<LinkList className={classes.viewport} readonly={props.readonly} links={links} onSelectionChange={dispatchSelectionChange} onLinkAction={dispatchLinkAction}/>)  : null}
+				{props.links != null ? (<LinkList className={classes.viewport} readonly={props.readonly} links={props.links} onSelectionChange={dispatchSelectionChange} onLinkAction={dispatchLinkAction}/>)  : null}
 			</Box>);
 		}
 
@@ -1420,8 +1454,6 @@
 					cef.controller.checkDocumentIn((err, asset) => {
 						if(err)
 							showError(err);
-						else
-							console.log(asset);
 					});
 				} else if(action == "exportDocumentAsPDF") {
 					cef.controller.exportPDF(workingDir.id, (err) => {
@@ -1442,6 +1474,20 @@
 								showError(err);
 						});
 					});
+				} else if(action == "uploadLink") {
+					event.linkIds.forEach(linkId => {
+						cef.controller.uploadLink(linkId, workingDir.id, (err) => {
+							if(err)
+								showError(err);
+						});
+					});
+				} else if(action == "checkLinkIn") {
+					event.linkIds.forEach(linkId => {
+						cef.controller.checkLinkIn(linkId, (err) => {
+							if(err)
+								showError(err);
+						});
+					});
 				} else if(action == "setLinkHighres" || action == "setLinkLowres") {
 					event.linkIds.forEach(linkId => {
 						cef.controller.changeLinkRendition(linkId, action == "setLinkHighres" ? "dalim:highresolution" : "dalim:preview", (err) => {
@@ -1457,7 +1503,7 @@
 					});
 				} else if(action == "unlockDocument") {
 					var doc = cef.controller.getActiveDocument();
-					cef.controller.lockAsset(doc.assetId, (err) => {
+					cef.controller.unlockAsset(doc.assetId, (err) => {
 						if(err)
 							showError(err);
 					});
