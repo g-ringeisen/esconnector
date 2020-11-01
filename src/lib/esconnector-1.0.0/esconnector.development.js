@@ -1579,6 +1579,8 @@ window.cef = (function() {
 			throw new Error(ERR_NOT_IMPLEMENTED, "Method 'getIndexURL' is not implemented");
 		},
 
+		updateDocumentMetadata: function(callback)  { throw new Error(ERR_NOT_IMPLEMENTED, "Method 'downloadDocument' is not implemented"); },
+
 		downloadDocument: function(assetId, callback)  { throw new Error(ERR_NOT_IMPLEMENTED, "Method 'downloadDocument' is not implemented"); },
 
 		uploadDocument: function(path, callback) { throw new Error(ERR_NOT_IMPLEMENTED, "Method 'uploadDocument' is not implemented"); },
