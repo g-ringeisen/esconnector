@@ -5,6 +5,7 @@
 		Button,
 		Container,
 		CssBaseline,
+		FormControlLabel,
 		IconButton,
 		InputAdornment,
 		List,
@@ -12,6 +13,7 @@
 		ListItemSecondaryAction,
 		ListItemText,
 		Snackbar,
+		Switch,
 		TextField,
 		ThemeProvider,
 		Typography,
@@ -43,7 +45,7 @@
 		return function ConnectPanel$0(props) {
 			
 			const classes = useStyles();
-
+			
 			const [isConnecting, setConnecting] = useState(false);
 			const [serverList,   setServerList] = useState(cef.prefs.get("ServerHistory", ["Demo"]));
 			const [serverName,   setServerName] = useState(serverList.length > 0 ? serverList[0] : "");

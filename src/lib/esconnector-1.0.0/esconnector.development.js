@@ -2989,24 +2989,36 @@ function initAdobeCC(initCallback)
 		callback = callback || DEFAULT_CALLBACK;
 		if(!module.host.document) {
 			callback("No active document", null);
+		} else if(module.host.document.state != null) {
+			callback("Document cannot be exported right now", null);
 		} else {
-			var docId    = module.host.document.id;
-			var preset    = module.prefs.get("PDFExportPreset");
-			var tempDir   = module.prefs.get("WorkingDir", module.util.userDocumentsFolder() + "/CMIS") + "/temp/";
+			var docId     = module.host.document.id;
 			var prevstate = _controller_setDocumentState(docId, "exporting");
-
-			var stat = window.cep.fs.stat(tempDir);
-			if(!stat || stat.err != 0)
-				var res = window.cep.fs.makedir(tempDir);
-
-			module.host.exportPDF(docId, tempDir, preset, (err, file) => {
+			_autoSave(module.host.document, (err, document) => {
 				if(err) {
-					_controller_setDocumentState(docId, prevstate);
 					callback(err, null);
 				} else {
-					module.repository.createAsset(path, file.name, _getFileData(file.path), (err, asset) => {
+					if(document.id != docId) {
 						_controller_setDocumentState(docId, prevstate);
-						callback(err, asset);
+						prevstate = _controller_setDocumentState(docId = document.id, prevstate);
+					}
+					var preset  = module.prefs.get("PDFExportPreset");
+					var tempDir = module.prefs.get("WorkingDir", module.util.userDocumentsFolder() + "/CMIS") + "/temp/";
+					var stat    = window.cep.fs.stat(tempDir);
+
+					if(!stat || stat.err != 0)
+						var res = window.cep.fs.makedir(tempDir);
+
+					module.host.exportPDF(docId, tempDir, preset, (err, file) => {
+						if(err) {
+							_controller_setDocumentState(docId, prevstate);
+							callback(err, null);
+						} else {
+							module.repository.createAsset(path, file.name, _getFileData(file.path), (err, asset) => {
+								_controller_setDocumentState(docId, prevstate);
+								callback(err, asset);
+							});
+						}
 					});
 				}
 			});
@@ -3040,11 +3052,16 @@ function initAdobeCC(initCallback)
 		}
 	});
 
+	var timeout = null;
 	function documentUpdateTask() {
 		module.controller.updateDocumentMetadata(() => {
-			setTimeout(documentUpdateTask, 10000);
+			timeout = setTimeout(documentUpdateTask, 10000);
 		});
 	}
+	window.addEventListener("unload", () => {
+		if(timeout != null)
+			clearTimeout(timeout);
+	});
 	documentUpdateTask();
 
 	module.host.init(initCallback);

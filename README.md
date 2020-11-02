@@ -8,20 +8,27 @@
 **Step 1** - Unzip the Archive or clone the repository
 
 **Step 2** - Copy the `src` or `build` folder as `ESConnector` in the Adobe CEP folder.
-<pre>$ cd &lt;your project folder&gt;
-$ cp -rp ./src "/Library/Application Support/Adobe/CEP/extensions/ESConnector"</pre> 
+<pre>
+$ cd &lt;your project folder&gt;
+$ cp -rp ./build "/Library/Application Support/Adobe/CEP/extensions/ESConnector"
+</pre>
+
 In a developpement environement, it is recommanded to create a softlink instead of copying the source so you test your changes immediately.
-<pre>$ ln -s "&lt;your project folder&gt;/src" "/Library/Application Support/Adobe/CEP/extensions/ESConnector"</pre> 
+<pre>
+$ ln -s "&lt;your project folder&gt;/src" "/Library/Application Support/Adobe/CEP/extensions/ESConnector"
+</pre> 
 
 **Step 3** - Enable the debug mode to run non signed extension. Depending on the version od Adobe CC you have, the command might differ.
 
 For `Adobe CC 2019` and `2020`
-<pre>$ defaults write ~/Library/Preferences/com.adobe.CSXS.9.plist PlayerDebugMode 1
+<pre>
+$ defaults write ~/Library/Preferences/com.adobe.CSXS.9.plist PlayerDebugMode 1
 </pre>
 
 For `Adobe CC 2021`
-
-<pre>$ defaults write ~/Library/Preferences/com.adobe.CSXS.10.plist PlayerDebugMode 1</pre>
+<pre>
+$ defaults write ~/Library/Preferences/com.adobe.CSXS.10.plist PlayerDebugMode 1
+</pre>
 
 **Step 4** - Open either your `Adobe InDesign`, `Adobe Illustrator` or `Adobe Photoshop`, then go to the menu `Window > Extensions > DALIM ES`
 

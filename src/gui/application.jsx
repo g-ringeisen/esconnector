@@ -29,6 +29,7 @@
 		TextField,
 		ThemeProvider,
 		Toolbar,
+		Tooltip,
 		Typography,
 
 		makeStyles
@@ -73,6 +74,40 @@
 		return rtype;
 	}
 
+	/**
+	 * ToolTip
+	 */
+	const ToolTip = (function() {
+
+		const useStyles = makeStyles((theme) => ({
+			tooltip: {
+				fontSize: 'inherit',
+				fontWeight: '400',
+				color: theme.palette.secondary.main
+			},
+			tooltipPlacementTop: {
+				margin: '5px 0px'
+			}
+		}), {
+			name: 'ToolTip'
+		});
+		
+		return function ToolTip$0(props) {
+
+			const classes = useStyles();
+
+			var attrs = Object.assign({
+				placement: "top",
+				enterDelay: 1800,
+				arrow: true,
+				classes: classes
+			}, props);
+
+			return (<Tooltip  {...attrs}>
+				<span>{props.children}</span>
+			</Tooltip>);
+		}
+	})();
 
 	/**
 	 * Preferences Panel
@@ -549,18 +584,26 @@
 				<ExpansionPanel className={classes.toolbar} square expanded={expanded}>
 					<ExpansionPanelSummary expandIcon={<ExpandIcon fontSize="inherit"/>} IconButtonProps={{onClick: () => setExpanded(!expanded)}}>
 						<Box className={classes.summaryLabel}><Typography>{selectionCount > 0 ? selectionCount + " " + cef.locale.get("selected") : ""}</Typography></Box>
-						<IconButton disabled={!canToggleRendition} color="secondary" onClick={(event) => dispatchAction(event, globalRenditionAction)}>
-							{globalRenditionAction == "setLinkHighres" ? <HighresIcon/> : <LowresIcon/>}
-						</IconButton>
-						<IconButton disabled={!canDownload} color="secondary" onClick={(event) => dispatchAction(event, "downloadLink")}>
-							<CheckOutIcon/>
-						</IconButton>
-						<IconButton disabled={!canUpload && !canCheckIn} color="secondary" onClick={(event) => dispatchAction(event, canUpload ? "uploadLink" : "checkLinkIn")}>
-							{canUpload ? <UploadIcon/> : <CheckInIcon/>}
-						</IconButton>
-						<IconButton disabled={!canGoto} color="secondary" onClick={(event) => dispatchAction(event, "showAsset")}>
-							<GotoIcon/>
-						</IconButton>
+						<ToolTip title={cef.locale.get("toggleRendition")}>
+							<IconButton disabled={!canToggleRendition} color="secondary" onClick={(event) => dispatchAction(event, globalRenditionAction)}>
+								{globalRenditionAction == "setLinkHighres" ? <HighresIcon/> : <LowresIcon/>}
+							</IconButton>
+						</ToolTip>
+						<ToolTip title={cef.locale.get("downloadLink")}>
+							<IconButton disabled={!canDownload} color="secondary" onClick={(event) => dispatchAction(event, "downloadLink")}>
+								<CheckOutIcon/>
+							</IconButton>
+						</ToolTip>
+						<ToolTip title={cef.locale.get(canUpload ? "uploadLink" : "checkLinkIn")}>
+							<IconButton disabled={!canUpload && !canCheckIn} color="secondary" onClick={(event) => dispatchAction(event, canUpload ? "uploadLink" : "checkLinkIn")}>
+								{canUpload ? <UploadIcon/> : <CheckInIcon/>}
+							</IconButton>
+						</ToolTip>
+						<ToolTip title={cef.locale.get("showAsset")}>
+							<IconButton disabled={!canGoto} color="secondary" onClick={(event) => dispatchAction(event, "showAsset")}>
+								<GotoIcon/>
+							</IconButton>
+						</ToolTip>
 					</ExpansionPanelSummary>
 					<ExpansionPanelDetails className={classes.infopane}>
 						<Grid container spacing={1}>
@@ -679,9 +722,9 @@
 
 			var busy          = info.state != null;
 			var canUpload     = !busy && !props.readonly;
-			var canCheckIn    = !busy &&info.assetId != null && info.repository == cef.controller.getRepositoryName();
-			var canLock       = !busy && !info.checkedOut;
-			var canUnlock     = !busy && info.checkedOut;
+			var canCheckIn    = !busy && info.assetId != null && info.repository == cef.controller.getRepositoryName();
+			var canLock       = !busy && !info.checkedOut && info.assetId != null && info.repository == cef.controller.getRepositoryName();
+			var canUnlock     = !busy && info.checkedOut && info.assetId != null && info.repository == cef.controller.getRepositoryName();
 			var canExport     = canUpload;
 			var canGoto       = info.assetId != null && info.repository == cef.controller.getRepositoryName();
 
@@ -753,21 +796,31 @@
 				</Container>
 				<Container className={classes.toolbar}>
 					<Box className={classes.summaryLabel}><Typography color="secondary">{cef.locale.get(info.state)}</Typography></Box>
-					<IconButton color="secondary" disabled={!canUpload} onClick={(event) => dispatchDocumentAction(event, "uploadDocument")}>
-						<UploadIcon/>
-					</IconButton>
-					<IconButton color="secondary" disabled={!canCheckIn} onClick={(event) => dispatchDocumentAction(event, "checkDocumentIn")}>
-						<CheckInIcon/>
-					</IconButton>
-					<IconButton disabled={!canLock && !canUnlock} color="secondary" onClick={(event) => dispatchDocumentAction(event, canLock ? "lockDocument" : "unlockDocument")}>
-						{info.checkedOut ? (<UnlockIcon/>) : (<LockIcon/>)}
-					</IconButton>
-					<IconButton color="secondary" disabled={!canExport} onClick={(event) => dispatchDocumentAction(event, "exportDocumentAsPDF")}>
-						<ExportPDFIcon/>
-					</IconButton>
-					<IconButton color="secondary" disabled={!canGoto} onClick={(event) => dispatchDocumentAction(event, "showAsset")}>
-						<GotoIcon/>
-					</IconButton>
+					<ToolTip title={cef.locale.get("uploadDocument")}>
+						<IconButton color="secondary" disabled={!canUpload} onClick={(event) => dispatchDocumentAction(event, "uploadDocument")}>
+							<UploadIcon/>
+						</IconButton>
+					</ToolTip>
+					<ToolTip title={cef.locale.get("checkDocumentIn")}>
+						<IconButton color="secondary" disabled={!canCheckIn} onClick={(event) => dispatchDocumentAction(event, "checkDocumentIn")}>
+							<CheckInIcon/>
+						</IconButton>
+					</ToolTip>
+					<ToolTip title={cef.locale.get(canLock ? "lockDocument" : "unlockDocument")}>
+						<IconButton disabled={!canLock && !canUnlock} color="secondary" onClick={(event) => dispatchDocumentAction(event, canLock ? "lockDocument" : "unlockDocument")}>
+							{info.checkedOut ? (<UnlockIcon/>) : (<LockIcon/>)}
+						</IconButton>
+					</ToolTip>
+					<ToolTip title={cef.locale.get("exportDocumentAsPDF")}>
+						<IconButton color="secondary" disabled={!canExport} onClick={(event) => dispatchDocumentAction(event, "exportDocumentAsPDF")}>
+							<ExportPDFIcon/>
+						</IconButton>
+					</ToolTip>
+					<ToolTip title={cef.locale.get("showAsset")}>
+						<IconButton color="secondary" disabled={!canGoto} onClick={(event) => dispatchDocumentAction(event, "showAsset")}>
+							<GotoIcon/>
+						</IconButton>
+					</ToolTip>
 				</Container>
 				{props.links != null ? (<LinkList className={classes.viewport} readonly={props.readonly} links={props.links} onSelectionChange={dispatchSelectionChange} onLinkAction={dispatchLinkAction}/>)  : null}
 			</Box>);
@@ -970,11 +1023,11 @@
 
 			var readonly      = props.readonly === true;
 			var canCheckOut   = true;
-			var canPlaceAsset = true;
+			var canPlaceAsset = props.enableDocumentAction;
 			var canLock       = true;
 			var canUnlock     = true;
-			var canUpload     = cef.controller.getActiveDocument() != null && !readonly;
-			var canExport     = !readonly;
+			var canUpload     = props.enableDocumentAction && !readonly;
+			var canExport     = props.enableDocumentAction != null && !readonly;
 
 			for(const asset of sortedAssets) {
 				if(asset.selected) {
@@ -1043,24 +1096,36 @@
 				<ExpansionPanel className={classes.toolbar} square expanded={expanded}>
 					<ExpansionPanelSummary expandIcon={<ExpandIcon/>} IconButtonProps={{onClick: () => setExpanded(!expanded)}}>
 						<Box className={classes.summaryLabel}><Typography>{selectionCount > 0 ? selectionCount + " " + cef.locale.get("selected") : ""}</Typography></Box>
-						<IconButton disabled={!canCheckOut} color="secondary" onClick={(event) => dispatchAction(event, "checkAssetOut")}>
-							<EditIcon/>
-						</IconButton>
-						<IconButton disabled={!canPlaceAsset} color="secondary" onClick={(event) => dispatchAction(event, "placeAsset")}>
-							<PlaceIcon/>
-						</IconButton>
-						<IconButton disabled={!canLock && !canUnlock} color="secondary" onClick={(event) => dispatchAction(event, canLock ? "lockAsset" : "unlockAsset")}>
-							{canLock ? (<LockIcon/>) : (<UnlockIcon/>)}
-						</IconButton>
-						<IconButton disabled={!canUpload} color="secondary" onClick={(event) => dispatchAction(event, "uploadDocument")}>
-							<UploadIcon/>
-						</IconButton>
-						<IconButton disabled={!canUpload} color="secondary" onClick={(event) => dispatchAction(event, "uploadAllLocalLinks")}>
-							<UploadAssetIcon/>
-						</IconButton>
-						<IconButton disabled={!canUpload || !canExport} color="secondary" onClick={(event) => dispatchAction(event, "exportDocumentAsPDF")}>
-							<ExportPDFIcon/>
-						</IconButton>
+						<ToolTip title={cef.locale.get("checkAssetOut")}>
+							<IconButton disabled={!canCheckOut} color="secondary" onClick={(event) => dispatchAction(event, "checkAssetOut")}>
+								<EditIcon/>
+							</IconButton>
+						</ToolTip>
+						<ToolTip title={cef.locale.get("placeAsset")}>
+							<IconButton disabled={!canPlaceAsset} color="secondary" onClick={(event) => dispatchAction(event, "placeAsset")}>
+								<PlaceIcon/>
+							</IconButton>
+						</ToolTip>
+						<ToolTip title={cef.locale.get(canLock ? "lockAsset" : "unlockAsset")}>
+							<IconButton disabled={!canLock && !canUnlock} color="secondary" onClick={(event) => dispatchAction(event, canLock ? "lockAsset" : "unlockAsset")}>
+								{canLock ? (<LockIcon/>) : (<UnlockIcon/>)}
+							</IconButton>
+						</ToolTip>
+						<ToolTip title={cef.locale.get("uploadDocument")}>
+							<IconButton disabled={!canUpload} color="secondary" onClick={(event) => dispatchAction(event, "uploadDocument")}>
+								<UploadIcon/>
+							</IconButton>
+						</ToolTip>
+						<ToolTip title={cef.locale.get("uploadAllLocalLinks")}>
+							<IconButton disabled={!canUpload} color="secondary" onClick={(event) => dispatchAction(event, "uploadAllLocalLinks")}>
+								<UploadAssetIcon/>
+							</IconButton>
+						</ToolTip>
+						<ToolTip title={cef.locale.get("exportDocumentAsPDF")}>
+							<IconButton disabled={!canUpload || !canExport} color="secondary" onClick={(event) => dispatchAction(event, "exportDocumentAsPDF")}>
+								<ExportPDFIcon/>
+							</IconButton>
+						</ToolTip>
 					</ExpansionPanelSummary>
 					<ExpansionPanelDetails className={classes.infopane}>
 						<Grid container spacing={1}>
@@ -1365,6 +1430,7 @@
 								onSelectionChange={(event, selection) => updateAssetSelection(selection)}
 								onAssetAction={dispatchAssetAction}
 								onAssetDrag={handleAssetDrag}
+								enableDocumentAction={props.enableDocumentAction}
 								readonly={!(workingDir.current && workingDir.current.permissions.canCreateDocument)}/>)}
 				</Box>
 				
@@ -1609,6 +1675,7 @@
 					{(currentView == "browser") 
 						? (<BrowserPanel className={classes.viewport}
 										path={currentPath}
+										enableDocumentAction={documentInfo != null && documentInfo.state == null}
 										onAssetAction={handleAction}
 										onBrowse={setCurrentPath}
 										onWorkingDirChanged={(workingDir) => updateWorkingDir(workingDir)}/>)
