@@ -362,17 +362,24 @@
 			var sortedLinks = props.links.sort(function(l1, l2) {
 				var v1 = (sortDir == "asc") ? l1[sortProp] : l2[sortProp];
 				var v2 = (sortDir == "asc") ? l2[sortProp] : l1[sortProp];
+				var sr = 0;
+
 				if(typeof v1 == 'string') {
-					return v1.localeCompare(v2);
+					sr = v1.localeCompare(v2);
 				} else if(v1 > v2) {
-					return 1;
+					sr = 1;
 				} else if(v1 < v2) {
-					return -1;
-				} else {
-					if(l1.name)
-						return l1.name.localeCompare(l2.name);
-					return 0;
+					sr = -1;
 				}
+
+				if(sr == 0) {
+					if(l1.name)
+						sr = l1.name.localeCompare(l2.name);
+					else if(l1.id)
+						sr = l1.id - l2.id;
+				}
+
+				return sr;
 			});
 
 			function dispatchAction(event, name, linkId) {
@@ -385,6 +392,10 @@
 							linkIds.push(link.id);
 				event.action  = name;
 				event.linkIds = linkIds;
+
+				// Prevent multiple actions to be triggered
+				event.stopPropagation();
+				event.preventDefault();
 
 				// Dispatch event
 				if(typeof props.onLinkAction == 'function')
@@ -530,12 +541,14 @@
 				}
 
 				var preview  = null;
-				var subtitle = link.repository || cef.locale.get("local");
+				var subtitle = null;
 				
 				if(link.state) {
 					subtitle = cef.locale.get(link.state);
 				} else if(link.assetId) {
 					subtitle = link.repository || cef.locale.get("unknown");
+				} else if(link.missing) {
+					subtitle = cef.locale.get("missing");
 				} else {
 					subtitle = cef.locale.get("local");
 				}
@@ -545,7 +558,7 @@
 				if(!preview)
 					preview = <NoPreviewIcon className={classes.thumbnail}/>
 
-				tableRows.push( <TableRow key={link.id} hover selected={link.selected} onClick={(event) => handleRowClick(event, link.id)}>
+				tableRows.push( <TableRow key={link.id} hover selected={link.selected} onClick={(event) => handleRowClick(event, link.id)} onDoubleClick={(event) => dispatchAction(event, "showLink", link.id)}>
 									<TableCell align="center">{preview}</TableCell>
 									<TableCell className={classes.filename}>
 										<Typography variant="body1">{link.name}</Typography>
@@ -585,7 +598,7 @@
 					<ExpansionPanelSummary expandIcon={<ExpandIcon fontSize="inherit"/>} IconButtonProps={{onClick: () => setExpanded(!expanded)}}>
 						<Box className={classes.summaryLabel}><Typography>{selectionCount > 0 ? selectionCount + " " + cef.locale.get("selected") : ""}</Typography></Box>
 						<ToolTip title={cef.locale.get("toggleRendition")}>
-							<IconButton disabled={!canToggleRendition} color="secondary" onClick={(event) => dispatchAction(event, globalRenditionAction)}>
+							<IconButton disabled={!globalRenditionAction != null} color="secondary" onClick={(event) => dispatchAction(event, globalRenditionAction)}>
 								{globalRenditionAction == "setLinkHighres" ? <HighresIcon/> : <LowresIcon/>}
 							</IconButton>
 						</ToolTip>
@@ -1615,6 +1628,14 @@
 								showError(err);
 						});
 					});
+				} else if(action == "showLink") {
+					var linkId = event.linkIds && event.linkIds.length > 0 ? event.linkIds[0] : null;
+					if(linkId) {
+						cef.controller.showLink(linkId, (err) => {
+							if(err)
+								showError(err);
+						});
+					}
 				} else if(action == "showAsset") {
 					var doc    = cef.controller.getActiveDocument();
 					var linkId = event.linkIds && event.linkIds.length > 0 ? event.linkIds[0] : null;
@@ -1646,7 +1667,7 @@
 					updateDocumentLinks(null);
 				} else {
 					var doc   = {...document};
-					var links = [...document.links];
+					var links = document.links ? [...document.links] : null;
 					updateDocumentInfo(doc);
 					if(documentInfo.id && documentInfo.id == document.id)
 						updateDocumentLinks(applyLinkSelection(links, extractLinkSelection(documentLinks)));

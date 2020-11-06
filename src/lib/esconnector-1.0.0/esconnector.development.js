@@ -11,10 +11,6 @@ Illustrator
   
  */
 
-const { error } = require('console');
-
-
-
 window.cef = (function() {
 
 	/**
@@ -38,6 +34,8 @@ window.cef = (function() {
 	const RENDITION_THUMBNAIL   = "cmis:thumbnail";
 
 	const DEFAULT_CALLBACK      = function(err) { if(err) console.error(err); }
+
+	const DEFAULT_DATA_FOLDER   = "CMIS"
 
  	_currentScript = window.document.currentScript;
 
@@ -210,10 +208,6 @@ window.cef = (function() {
 
 			userDocumentsFolder: function () {
 				return this.userHome() + "/Documents";
-			},
-
-			securizePath: function(path) {
-				return path.replace(/:/gi, '-');
 			},
 
 			encodeBase64: function( data ) {
@@ -911,8 +905,8 @@ window.cef = (function() {
 				options  = {};
 			}
 			if(options.format == 'file' && !options.output) {
-				var workingDir = module.prefs.get("WorkingDir", module.util.userDocumentsFolder() + "/CMIS");
-				options.output = workingDir + "/" + this.name + "/" + contentId + "/{filename}";      
+				var workingDir = module.prefs.get("WorkingDir", module.util.userDocumentsFolder() + "/" + DEFAULT_DATA_FOLDER);
+				options.output = workingDir + "/" + this.name + "/" + contentId.replace(/:/gi, '-') + "/{filename}";      
 			}
 			this._httpGet(this.getContentURL(contentId), options, callback);
 		}
@@ -1597,6 +1591,8 @@ window.cef = (function() {
 
 		checkLinkIn: function(linkId, callback) { throw new Error(ERR_NOT_IMPLEMENTED, "Method 'uploadLink' is not implemented"); },
 		
+		showLink: function(linkId, callback) { throw new Error(ERR_NOT_IMPLEMENTED, "Method 'showLink' is not implemented"); },
+		
 		placeAsset: function(assetId, callback) { throw new Error(ERR_NOT_IMPLEMENTED, "Method 'placeAsset' is not implemented"); },
 
 		changeLinkRendition: function(linkId, rendition, callback) { throw new Error(ERR_NOT_IMPLEMENTED, "Method 'changeLinkRendition' is not implemented"); },
@@ -1838,7 +1834,7 @@ function initAdobeCC(initCallback)
 	module.fs.getFileMetadata = function(path) {
 		if(window.cep_node.fs.existsSync(path)) {
 			var realpath = window.cep_node.fs.realpathSync(path);
-			var mdtcache = module.cache.get("filemetadata");
+			var mdtcache = module.cache.get("filemetadata", {});
 			var filemdt  = mdtcache[realpath] || {};
 			return filemdt;
 		} else {
@@ -1854,6 +1850,20 @@ function initAdobeCC(initCallback)
 			}
 		}
 		module.cache.set("filemetadata", mdtcache);
+	}
+
+	module.fs.mkdirRecursive = function(path) {
+		var res = window.cep.fs.makedir(path);
+		if(res.err == window.cep.fs.ERR_NOT_FOUND) {
+			var parent = module.path.dirname(path);
+			if(parent && parent != path) {
+				res = module.fs.mkdirRecursive(parent);
+				if(res.err == 0)
+					res = window.cep.fs.makedir(path);
+			}
+		}
+		return res;
+		// return cep_node.fs.mkdirSync(cep_node.path.dirname(path), {recursive: true});
 	}
 
 	/**
@@ -1937,9 +1947,8 @@ function initAdobeCC(initCallback)
 				if(!fname)
 					fname = cep_node.path.basename(options.pathname);
 				path = path.replace('{filename}', fname);
-				path = module.util.securizePath(path);
 				options.output = path;
-				cep.fs.makedir(cep_node.path.dirname(path));
+				module.fs.mkdirRecursive(cep_node.path.dirname(path));
 				stream = cep_node.fs.createWriteStream(path);
 			} else if(options.output instanceof Writable) {
 				stream = options.output
@@ -2054,7 +2063,7 @@ function initAdobeCC(initCallback)
 			var cacheFile = cacheDir + "/" + name + ".json";
 			var stat = window.cep.fs.stat(cacheDir);
 			if(!stat || stat.err != 0) {
-				var res = window.cep.fs.makedir(cacheDir);
+				var res = module.fs.mkdirRecursive(cacheDir);
 				if(res.err != 0) {
 					console.error("Unable to create cache folder '" + cacheDir + "' (" + res.err + ")");
 					return false;
@@ -2342,6 +2351,10 @@ function initAdobeCC(initCallback)
 			_csinterface.callFunction("csif.updateLink", docId, linkId, metadata, callback);
 		},
 
+		showLink: function(docId, linkId, callback) {
+			_csinterface.callFunction("csif.showLink", docId, linkId, callback);
+		},
+
 		exportPDF: function(docId, path, preset, callback) {
 			var name = this.document ? this.document.name : null;
 			if(docId == null || name == null)
@@ -2433,7 +2446,7 @@ function initAdobeCC(initCallback)
 	};
 
 	module.controller.getCacheFolder = function() {
-		return "" + cef.prefs.get("WorkingDir", cef.util.userDocumentsFolder() + "/CMIS");
+		return "" + cef.prefs.get("WorkingDir", cef.util.userDocumentsFolder() + "/" + DEFAULT_DATA_FOLDER);
 	}
 
 	module.controller.getCacheSize = function(callback) {
@@ -2512,9 +2525,9 @@ function initAdobeCC(initCallback)
 		if(module.host.name == "IDSN") {
 			supportedTypes = ["application/vnd.adobe.indesign"]
 		} else if(module.host.name == "ILST") {
-			supportedTypes = ["application/vnd.adobe.illustrator", "application/illustrator", "application/pdf"]
+			supportedTypes = [/application\/(vnd.adobe.)?illustrator/, /application\/(pdf|postscript)/]
 		} else if(module.host.name == "PSPX") {
-			supportedTypes = ["application/vnd.adobe.photoshop", "image/jpeg", "image/jpg", "image/png", "image/tif", "image/tiff"]
+			supportedTypes = [/image\/.*/, /application\/(vnd.adobe.)?photoshop/]
 		}
 
 		/* TEMP - Search does not return mime type */
@@ -2522,15 +2535,22 @@ function initAdobeCC(initCallback)
 			return true;
 		/* */
 
-		return type != null && supportedTypes.includes(type.toLowerCase());
+		if(type != null) {
+			type = type.toLowerCase();
+			for(const supportedType of supportedTypes) {
+				if((supportedType instanceof RegExp && type.match(supportedType)) || type == supportedType)
+					return true;
+			}
+		}
+		return false;
 	}
 
 	module.controller.isSupportedLinkType = function(type) {
 		var supportedTypes = [];
 		if(module.host.name == "IDSN") {
-			supportedTypes = ["application/illustrator", "application/vnd.adobe.illustrator", "application/vnd.adobe.photoshop", "application/pdf", "image/jpeg", "image/jpg", "image/png", "image/tif", "image/tiff"]
+			supportedTypes = [/image\/.*/, /application\/(vnd.adobe.)?(illustrator|photoshop)/, /application\/(pdf|postscript)/]
 		} else if(module.host.name == "ILST") {
-			supportedTypes = ["application/illustrator", "application/vnd.adobe.illustrator", "application/pdf", "image/jpeg", "image/jpg", "image/png", "image/tif", "image/tiff"]
+			supportedTypes = [/image\/.*/, /application\/(vnd.adobe.)?illustrator/, /application\/(pdf|postscript)/]
 		} else if(module.host.name == "PSPX") {
 			supportedTypes = []
 		}
@@ -2540,7 +2560,14 @@ function initAdobeCC(initCallback)
 			return true;
 		/* */
 
-		return type != null && supportedTypes.includes(type.toLowerCase());
+		if(type != null) {
+			type = type.toLowerCase();
+			for(const supportedType of supportedTypes) {
+				if((supportedType instanceof RegExp && type.match(supportedType)) || type == supportedType)
+					return true;
+			}
+		}
+		return false;
 	}
 
 	module.controller.updateDocumentMetadata = function(callback) {
@@ -2598,7 +2625,7 @@ function initAdobeCC(initCallback)
 				var contentId   = asset.renditions && asset.renditions[rendition] ? asset.renditions[rendition].contentId : null;
 				var repository  = module.repository.name;
 				var filename    = asset.renditions && asset.renditions[rendition] ? asset.renditions[rendition].contentName : null;
-				var filepath    = module.util.securizePath(options.destination || module.controller.getCacheFolder() + "/" + repository + "/" + contentId + "/" + filename);
+				var filepath    = options.destination || module.controller.getCacheFolder() + "/" + repository + "/" + contentId.replace(/:/gi, '-') + "/" + filename;
 				var filestat    = _getFileStat(filepath);
 				if(filestat) {
 					_controller_setAssetState(assetId, prevstate);
@@ -2895,6 +2922,18 @@ function initAdobeCC(initCallback)
 		}
 	}
 
+	module.controller.showLink = function(linkId, callback) {
+		callback = callback || DEFAULT_CALLBACK;
+		if(!module.host.document) {
+			callback("No active document", null);
+		} else {
+			var docId = module.host.document.id;
+			module.host.showLink(docId, linkId, (err) => {
+				callback(err);
+			});
+		}
+	}
+
 	module.controller.placeAsset = function(assetId, callback) {
 		callback = callback || DEFAULT_CALLBACK;
 		if(!module.host.document) {
@@ -3003,11 +3042,11 @@ function initAdobeCC(initCallback)
 						prevstate = _controller_setDocumentState(docId = document.id, prevstate);
 					}
 					var preset  = module.prefs.get("PDFExportPreset");
-					var tempDir = module.prefs.get("WorkingDir", module.util.userDocumentsFolder() + "/CMIS") + "/temp/";
+					var tempDir = module.prefs.get("WorkingDir", module.util.userDocumentsFolder() + "/" + DEFAULT_DATA_FOLDER) + "/temp/";
 					var stat    = window.cep.fs.stat(tempDir);
 
 					if(!stat || stat.err != 0)
-						var res = window.cep.fs.makedir(tempDir);
+						var res = module.fs.mkdirRecursive(tempDir);
 
 					module.host.exportPDF(docId, tempDir, preset, (err, file) => {
 						if(err) {
@@ -3063,6 +3102,10 @@ function initAdobeCC(initCallback)
 			clearTimeout(timeout);
 	});
 	documentUpdateTask();
+
+	window.addEventListener("keypress", (e) => {
+		console.log(e);
+	});
 
 	module.host.init(initCallback);
 	console.log("Adobe CC Extension Loaded");

@@ -265,20 +265,22 @@ if(!csif || csif.version != "0") {
 		}
 
 		csif.getDocumentLinks = function(doc) {
-
-			function findPageNumber(link) {
-				for(var parent = link.parent; parent != null && parent != parent.parent; parent = parent.parent) {
-					if(parent.reflect.name == "Page" || parent.reflect.name == "Spread") {
-						return parent.index + 1;
-					}
-				}
-				return 0;
-			}
 			
 			var list = [];
 			var links = doc.links;
 			var selectedLinks = csif.selectedLinks(doc);
-	
+			var pageLinkMap = {};
+
+			// Retreive Links pages
+			var items = doc.allPageItems;
+			for(var i=0; i < items.length; i++) {
+				var item = items[i];
+				if(item.hasOwnProperty('itemLink')) {
+					var page = item.parentPage;
+					pageLinkMap[item.itemLink.id] = page ? page.name : "PB";
+				}
+			}
+			
 			for (var i=0; i<links.length; i++) {
 				
 				var link = links[i];
@@ -295,7 +297,7 @@ if(!csif || csif.version != "0") {
 				metadata.selected  = selected;
 				metadata.embedded  = (!link.needed);
 				metadata.missing   = link.status == LinkStatus.LINK_MISSING;
-				metadata.page      = findPageNumber(link);
+				metadata.page      = pageLinkMap[link.id];
 				metadata.size      = link.size;
 				metadata.path      = _getLinkPath(link);
 				metadata.thumbnail = link.extractLabel("thumbnail");
@@ -359,6 +361,22 @@ if(!csif || csif.version != "0") {
 					for(var key in properties)
 						metadata[key] = properties[key];
 					link.insertLabel("metadata", JSON.stringify(metadata));
+				}
+			}
+		}
+
+		csif.showLink = function(docId, linkId) {
+			var doc  = this.getDocumentById(docId);
+			if(doc) {
+				var items = doc.allPageItems;
+				for(var i=0; i < items.length; i++) {
+					var item = items[i];
+					if(item.hasOwnProperty('itemLink')) {
+						if(item.itemLink && item.itemLink.id == linkId) {
+							item.select();
+							break;
+						}
+					}
 				}
 			}
 		}

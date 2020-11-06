@@ -16,6 +16,9 @@ cef.locale.define("C", {
 	"checkingout": "Checking out...",
 	"checkingin": "Checking in...",
 	"selected": "selected",
+	"local": "Local",
+	"missing": "Missing",
+	"unknown": "Unknown",
 	"dalim:highresolution": "High Resolution",
 	"dalim:highres": "High Resolution",
 	"dalim:lowres": "Low Resolution",
@@ -70,8 +73,11 @@ cef.locale.define("C", {
 	"showAsset": "Show in repository",
 
 	"application/vnd.adobe.indesign": "Adobe InDesign",
+	"application/vnd.adobe.indesign-idml-package": "IDML Package",
 	"application/vnd.adobe.photoshop": "Adobe Photoshop",
 	"application/illustrator": "Adobe Illustrator",
+	"application/postscript": "Postscript",
+	"text/plain": "Text",
 	"video/quicktime": "QuickTime Video"
 });
 
@@ -97,6 +103,9 @@ cef.locale.define("fr", {
 	"checkingout": "Récupération...",
 	"checkingin": "Enregistrement...",
 	"selected": "sélectionné(s)",
+	"local": "Local",
+	"missing": "Manquant",
+	"unknown": "Inconnue",
 	"dalim:highresolution": "Haute définition",
 	"dalim:highres": "Haute définition",
 	"dalim:lowres": "Basse définition",
