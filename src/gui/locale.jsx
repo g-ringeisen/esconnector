@@ -10,11 +10,7 @@ cef.locale.define("C", {
 	"servername.label": "Server name",
 	"servername.helpertext": "Enter a repository name or choose one in the history below",
 	"datasizes": ['bytes', 'Kb', 'Mb', 'Gb', 'Tb', 'Pb'],
-	"downloading": "Downloading...",
-	"uploading": "Uploading...",
-	"exporting": "Exporting PDF...",
-	"checkingout": "Checking out...",
-	"checkingin": "Checking in...",
+	
 	"selected": "selected",
 	"local": "Local",
 	"missing": "Missing",
@@ -24,6 +20,8 @@ cef.locale.define("C", {
 	"dalim:lowres": "Low Resolution",
 	"dalim:preview": "Preview",
 	"dalim:thumbnail": "Thumbnail",
+
+	
 
 	"Browser": "Browser",
 	"Document": "Document",
@@ -53,6 +51,7 @@ cef.locale.define("C", {
 	"Size": "Size",
 	"Account": "Account",
 
+	// Buttons and actions
 	"uploadDocument": "Upload document",
 	"checkAssetOut": "Check asset out",
 	"checkDocumentIn": "Check document in",
@@ -60,6 +59,8 @@ cef.locale.define("C", {
 	"uploadAllLocalLinks": "Upload all local links",
 	"downloadAllMissingLinks": "Download all missing links",
 	"placeAsset": "Place asset",
+	"unlinkAsset": "Unlink asset",
+	"linkMissingAssets": "Link missing assets",
 	"downloadLink": "Download asset",
 	"uploadLink": "Upload linked file",
 	"checkLinkIn": "Check link in",
@@ -72,6 +73,22 @@ cef.locale.define("C", {
 	"unlockAsset": "Unlock",
 	"showAsset": "Show in repository",
 
+	// States
+	"downloading": "Downloading...",
+	"uploading": "Uploading...",
+	"exporting": "Exporting PDF...",
+	"checkingout": "Checking out...",
+	"checkingin": "Checking in...",
+	"relinking": "Relinking...",
+
+	// Alert messages
+	"document_uploaded": "Document '{0}' successfully uploaded",
+	"document_checked_in": "Document '{0}' successfully checked in",
+	"pdf_exported": "Document '{0}' successfully exported as PDF",
+	"{0}_asset_linked": "{0} asset linked",
+	"{0}_assets_linked": "{0} assets linked",
+
+	// File types
 	"application/vnd.adobe.indesign": "Adobe InDesign",
 	"application/vnd.adobe.indesign-idml-package": "IDML Package",
 	"application/vnd.adobe.photoshop": "Adobe Photoshop",
@@ -97,11 +114,7 @@ cef.locale.define("fr", {
 	"servername.label": "Nom du serveur",
 	"servername.helpertext": "Entrez un nom de serveur ou selectionnez en un ci-dessous",
 	"datasizes": ['octets', 'Ko', 'Mo', 'Go', 'To', 'Po'],
-	"downloading": "Téléchargement...",
-	"exporting": "Export PDF...",
-	"uploading": "Envoie en cous...",
-	"checkingout": "Récupération...",
-	"checkingin": "Enregistrement...",
+	
 	"selected": "sélectionné(s)",
 	"local": "Local",
 	"missing": "Manquant",
@@ -140,6 +153,7 @@ cef.locale.define("fr", {
 	"Size": "Taille",
 	"Account": "Compte",
 
+	// Buttons and actions
 	"uploadDocument": "Envoyer le document",
 	"checkAssetOut": "Editer le document",
 	"checkDocumentIn": "Redéposer le document",
@@ -147,6 +161,8 @@ cef.locale.define("fr", {
 	"uploadAllLocalLinks": "Envoyer tous les fichiers locaux",
 	"downloadAllMissingLinks": "Télécharger les fichiers manquants",
 	"placeAsset": "Placer le fichier",
+	"unlinkAsset": "Délier le fichier",
+	"linkMissingAssets": "Lier les fichiers manquants",
 	"downloadLink": "Télécharger le fichier",
 	"uploadLink": "Envoyer le fichier",
 	"checkLinkIn": "Redéposer le fichier",
@@ -159,6 +175,22 @@ cef.locale.define("fr", {
 	"unlockAsset": "Déverrouiller",
 	"showAsset": "Montrer dans la repository",
 
+	// States
+	"downloading": "Téléchargement...",
+	"exporting": "Export PDF...",
+	"uploading": "Envoie en cous...",
+	"checkingout": "Récupération...",
+	"checkingin": "Enregistrement...",
+	"relinking": "Association...",
+
+	// Alert messages
+	"document_uploaded": "Document '{0}' envoyé",
+	"document_checked_in": "Document '{0}' déposé",
+	"pdf_exported": "Document '{0}' exporté en PDF",
+	"{0}_asset_linked": "{0} asset lié",
+	"{0}_assets_linked": "{0} assets liés",
+
+	// File types
 	"video/quicktime": "Vidéo QuickTime"
 });
 
