@@ -471,6 +471,7 @@
 			var canDownload           = true;
 			var canUpload             = true;
 			var canCheckIn            = true;
+			var canUnlink             = true;
 			var canGoto               = true;
 
 			var tableRows      = [];
@@ -537,7 +538,8 @@
 					canDownload        = canDownload && !busy && sameRepository && synchAction == "downloadLink";
 					canUpload          = canUpload && !busy && synchAction == "uploadLink";
 					canCheckIn         = canCheckIn && !busy && sameRepository && synchAction == "checkLinkIn";
-					canGoto            = canGoto && sameRepository;
+					canUnlink          = canUnlink && link.assetId != null; 
+					canGoto            = canGoto && link.assetId != null && sameRepository;
 				}
 
 				var preview  = null;
@@ -571,6 +573,7 @@
 								</TableRow>);
 			}
 
+			canUnlink          = canUnlink && selectionCount > 0;
 			canToggleRendition = canToggleRendition && selectionCount > 0;
 			canDownload        = canDownload && selectionCount > 0;
 			canUpload          = canUpload && selectionCount > 0;
@@ -610,6 +613,11 @@
 						<ToolTip title={cef.locale.get(canUpload ? "uploadLink" : "checkLinkIn")}>
 							<IconButton disabled={!canUpload && !canCheckIn} color="secondary" onClick={(event) => dispatchAction(event, canUpload ? "uploadLink" : "checkLinkIn")}>
 								{canUpload ? <UploadIcon/> : <CheckInIcon/>}
+							</IconButton>
+						</ToolTip>
+						<ToolTip title={cef.locale.get("unlinkAsset")}>
+							<IconButton disabled={!canUnlink} color="secondary" onClick={(event) => dispatchAction(event, "unlinkAsset")}>
+								<UnlinkIcon/>
 							</IconButton>
 						</ToolTip>
 						<ToolTip title={cef.locale.get("showAsset")}>
@@ -1036,11 +1044,12 @@
 
 			var readonly      = props.readonly === true;
 			var canCheckOut   = true;
-			var canPlaceAsset = props.enableDocumentAction;
+			var canPlaceAsset = props.enableDocumentAction !== false;
 			var canLock       = true;
 			var canUnlock     = true;
-			var canUpload     = props.enableDocumentAction && !readonly;
-			var canExport     = props.enableDocumentAction != null && !readonly;
+			var canUpload     = props.enableDocumentAction !== false && !readonly;
+			var canExport     = props.enableDocumentAction !== false && !readonly;
+			var canRelink     = props.enableDocumentAction !== false;
 
 			for(const asset of sortedAssets) {
 				if(asset.selected) {
@@ -1132,6 +1141,11 @@
 						<ToolTip title={cef.locale.get("uploadAllLocalLinks")}>
 							<IconButton disabled={!canUpload} color="secondary" onClick={(event) => dispatchAction(event, "uploadAllLocalLinks")}>
 								<UploadAssetIcon/>
+							</IconButton>
+						</ToolTip>
+						<ToolTip title={cef.locale.get("linkMissingAssets")}>
+							<IconButton disabled={!canRelink} color="secondary" onClick={(event) => dispatchAction(event, "linkMissingAssets")}>
+								<RelinkAllIcon/>
 							</IconButton>
 						</ToolTip>
 						<ToolTip title={cef.locale.get("exportDocumentAsPDF")}>
@@ -1229,8 +1243,6 @@
 			const classes    = useStyles();
 			const workingDir = useRef(null);
 			const searchQuery = useRef(null);
-			
-			const forceUpdate = useForceUpdate();
 
 			const [searchMode,  setSearchMode]  = useState(false);
 			const [loadingMode, setLoadingMode] = useState(false);
@@ -1472,12 +1484,6 @@
 			},
 			viewport: {
 				flexGrow: 1
-			},
-			alert: {
-				'& .MuiSnackbarContent-root': {
-					color: theme.palette.primary.main,
-					backgroundColor: theme.palette.error.main
-				}
 			}
 		}), {
 			name: 'AppGUI'
@@ -1504,19 +1510,46 @@
 				return links;
 			}
 		
-			const [documentInfo,  updateDocumentInfo]  = React.useState(cef.controller.getActiveDocument() || {});
-			const [documentLinks, updateDocumentLinks] = React.useState(documentInfo.links);
-			const [currentPath,   setCurrentPath]      = React.useState(null);
-			const [currentView,   setCurrentView]      = React.useState('browser');
-			const [errorMessage,  setErrorMessage]     = React.useState(null);
-			const [workingDir,    updateWorkingDir]    = React.useState(null);
+			const messageStack = React.useRef([]);
+
+			const [documentInfo,   updateDocumentInfo]  = React.useState(cef.controller.getActiveDocument() || {});
+			const [documentLinks,  updateDocumentLinks] = React.useState(documentInfo.links);
+			const [currentPath,    setCurrentPath]      = React.useState(null);
+			const [currentView,    setCurrentView]      = React.useState('browser');
+			const [workingDir,     updateWorkingDir]    = React.useState(null);
+			const [currentMessage, setCurrentMessage]   = React.useState(null);
 			
 			function updateLinkSelection(selection) {
 				updateDocumentLinks([...applyLinkSelection(documentLinks, selection)]);
 			}
 
+			function pushMessage(type, text, delay) {
+				if(delay == null)
+					delay = 2000;
+				if(!pushMessage.key)
+					pushMessage.key = 1;
+				messageStack.current.push({
+					key:   pushMessage.key++,
+					type:  type,
+					text:  text,
+					delay: delay
+				});
+				setCurrentMessage(messageStack.current[0] || null);
+			}
+
+			function showNextMessage() {
+				if(messageStack.current.length > 0) {
+					messageStack.current = messageStack.current.slice(1)
+					setCurrentMessage(messageStack.current[0] || null);
+				}
+			}
+
 			function showError(err) {
-				setErrorMessage(err.toString());
+				pushMessage("error", err.toString(), 2000);
+			}
+
+			function showMessage(msg) {
+				pushMessage("info", msg.toString(), 2000);
 			}
 		
 			function handleAction(event, action) {
@@ -1524,6 +1557,8 @@
 					cef.controller.uploadDocument(workingDir.id, (err) => {
 						if(err)
 							showError(err);
+						else
+							showMessage(cef.locale.get("document_uploaded"));
 					});
 				} else if(action == "checkAssetOut") {
 					event.assetIds.forEach(assetId => {
@@ -1536,11 +1571,15 @@
 					cef.controller.checkDocumentIn((err, asset) => {
 						if(err)
 							showError(err);
+						else
+							showMessage(cef.locale.get("document_checked_in"));
 					});
 				} else if(action == "exportDocumentAsPDF") {
 					cef.controller.exportPDF(workingDir.id, (err) => {
 						if(err)
 							showError(err);
+						else
+							showMessage(cef.locale.get("pdf_exported"));
 					});
 				} else if(action == "uploadAllLocalLinks") {
 					var doc = cef.controller.getActiveDocument();
@@ -1570,6 +1609,20 @@
 				} else if(action == "placeAsset") {
 					event.assetIds.forEach(assetId => {
 						cef.controller.placeAsset(assetId, (err) => {
+							if(err)
+								showError(err);
+						});
+					});
+				} else if(action == "linkMissingAssets") {
+					cef.controller.linkMissingAssets(workingDir.id, (err, count) => {
+						if(err)
+							showError(err);
+						else
+							showMessage(cef.locale.get(count > 1 ? "{0}_assets_linked" : "{0}_asset_linked", count));
+					});
+				} else if(action == "unlinkAsset") {
+					event.linkIds.forEach(linkId => {
+						cef.controller.unlinkAsset(linkId, (err) => {
 							if(err)
 								showError(err);
 						});
@@ -1710,16 +1763,18 @@
 										readonly={!workingDir || !workingDir.permissions.canCreateDocument}/>)
 						: (<PreferencePanel className={classes.viewport}/>)}
 
-					<Snackbar className={classes.alert}
-							open={errorMessage != null}
-							autoHideDuration={3000} 
+					<Snackbar key={currentMessage ? currentMessage.key : "x"}
+							type={currentMessage ? currentMessage.type : "info"}
+							open={currentMessage != null}
+							autoHideDuration={currentMessage ? currentMessage.delay : 0} 
 							anchorOrigin={{
 								vertical: 'bottom',
 								horizontal: 'center',
-							}}
-							message={errorMessage}
-							action={<IconButton aria-label="close" color="inherit" onClick={() => setErrorMessage(null)}><CloseIcon/></IconButton>}
-							onClose={() => setErrorMessage(null)}/>
+							  }}
+							message={currentMessage ? currentMessage.text : ""}
+							action={<IconButton aria-label="close" color="inherit" onClick={() => showNextMessage()}><CloseIcon/></IconButton>}
+							onClose={() => showNextMessage(null)}/>
+
 				</Box>);
 		};
 	})();

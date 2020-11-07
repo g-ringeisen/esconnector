@@ -159,6 +159,18 @@
 		)
 	}
 
+	module.RelinkIcon = (props) => {
+		return (<Icon {...props}>link</Icon>);
+	}
+
+	module.RelinkAllIcon = (props) => {
+		return (<Icon {...props}>link</Icon>);
+	}
+	
+	module.UnlinkIcon = (props) => {
+		return (<Icon {...props}>link_off</Icon>);
+	}
+
 	module.GotoIcon = (props) => {
 		return (<Icon {...props}>launch</Icon>);
 	}

@@ -295,14 +295,23 @@ window.cef = (function() {
 		 */
 		locale: {
 			
-			get: function(key, locale) {
-				if(!locale)
-					locale = module.host.locale;
+			get: function(key) {
+				var text   = key;
+				var locale = module.host.locale;
 				for (const l of module.util.parseLocale(locale)) {
-					if(this[l] && this[l][key])
-						return this[l][key];
+					if(this[l] && this[l][key]) {
+						text = this[l][key];
+						break;
+					}
 				}
-				return key;
+				if(arguments.length > 1) {
+					var values = Array.prototype.slice.call(arguments, 1);
+					text = text.replace(/(\{([0-9]+)\})/g, function(match, pattern, index) { 
+						var v = values[index];
+						return v != null ? v : pattern;
+					});
+				}
+				return text;
 			},
 			
 			define: function(locale, kvpairs) {
@@ -1545,7 +1554,6 @@ window.cef = (function() {
 				}
 			});
 		},
-
 	
 		lockAsset: function(assetId, callback) {
 			module.controller.checkAssetOut(assetId, callback);
@@ -1593,6 +1601,12 @@ window.cef = (function() {
 		
 		showLink: function(linkId, callback) { throw new Error(ERR_NOT_IMPLEMENTED, "Method 'showLink' is not implemented"); },
 		
+		linkMissingAssets: function(folderId, callback) { throw new Error(ERR_NOT_IMPLEMENTED, "Method 'linkMissingAssets' is not implemented"); },
+
+		linkAsset: function(linkId, assetId, callback) { throw new Error(ERR_NOT_IMPLEMENTED, "Method 'linkAsset' is not implemented"); },
+
+		unlinkAsset: function(linkId, callback) { throw new Error(ERR_NOT_IMPLEMENTED, "Method 'unlinkAsset' is not implemented"); },
+
 		placeAsset: function(assetId, callback) { throw new Error(ERR_NOT_IMPLEMENTED, "Method 'placeAsset' is not implemented"); },
 
 		changeLinkRendition: function(linkId, rendition, callback) { throw new Error(ERR_NOT_IMPLEMENTED, "Method 'changeLinkRendition' is not implemented"); },
@@ -2189,7 +2203,14 @@ function initAdobeCC(initCallback)
 					});
 					module.host.emit("selectionChanged", event.eventData);
 				}
-			} else if(event.eventType == "afterActivate" || event.eventType == "afterLinksChanged") {
+			} else if(event.eventType == "afterLinksChanged") {
+				if(_handleHostEvents.linkChangedTimeout)
+					clearTimeout(_handleHostEvents.linkChangedTimeout);
+				_handleHostEvents.linkChangedTimeout = setTimeout(() => {
+					_updateDocumentInfo();
+					_handleHostEvents.linkChangedTimeout = null;
+				}, 500);
+			} else if(event.eventType == "afterActivate") {
 				_updateDocumentInfo();
 			} else if(event.eventType == "beforeDeactivate" && module.host.document && module.host.document.id == event.sourceId) {
 				module.host.document = null;
@@ -2847,6 +2868,7 @@ function initAdobeCC(initCallback)
 					} else {
 						module.host.updateLink(docId, linkId, {
 							path:      info.path,
+							location:  info.location,
 							rendition: info.rendition,
 							contentId: info.contentId,
 						}, (err) => {
@@ -2934,6 +2956,115 @@ function initAdobeCC(initCallback)
 		}
 	}
 
+	module.controller.linkMissingAssets = function(folderId, callback) { 
+		callback = callback || DEFAULT_CALLBACK;
+		if(!module.host.document) {
+			callback("No active document", null);
+		} else {
+			var docId     = module.host.document.id;
+			var prevstate = _controller_setDocumentState(docId, "relinking");
+
+			// Create a Name-IDs map of missing links
+			var linkMap   = null;
+			if(module.host.document.links) {
+				for(var link of module.host.document.links) {
+					if(link.missing && !link.assetId) {
+						if(!linkMap)
+							linkMap = {};
+						if(!linkMap[link.name])
+							linkMap[link.name] = []
+						linkMap[link.name].push(link.id);
+					}
+				}
+			}
+
+			// If the map is not empty, try to link them to the current folder
+			if(linkMap) {
+				module.controller.listAssets(folderId, (err, assets) => {
+					if(err) {
+						_controller_setDocumentState(docId, prevstate);
+						callback(err, null);
+					} else {
+						var count1 = 0;
+						var count2 = 0;
+						for(var asset of assets) {
+							var linkIds = linkMap[asset.name];
+							if(linkIds && linkIds.length > 0) {
+								for(var linkId of linkIds) {
+									count1++;
+									module.host.updateLink(docId, linkId, {
+										assetId:    asset.id,
+										version:    null,
+										rendition:  (module.prefs.get("UseHighResolution", false) ? RENDITION_HIGHRES : RENDITION_PREVIEW),
+										repository: module.controller.getRepositoryName(),
+										location:   asset.path,
+										contentId:  null
+									}, (err) => {
+										;
+										if(err)
+											console.error(err);
+										else
+											count2++;
+										if(--count1 == 0) {
+											_controller_setDocumentState(docId, prevstate);
+											callback(err, count2);
+										}
+									});
+								}
+							}
+						}
+
+						if(count1 == 0) {
+							_controller_setDocumentState(docId, prevstate);
+							callback(err, 0);
+						}
+					}
+				});
+			} else {
+				_controller_setDocumentState(linkId, prevstate);
+				callback(null, 0);
+			}
+		}
+	}
+
+	module.controller.linkAsset = function(linkId, assetId, callback) { 
+		callback = callback || DEFAULT_CALLBACK;
+		if(!module.host.document) {
+			callback("No active document", null);
+		} else {
+			var docId = module.host.document.id;
+			module.host.updateLink(docId, linkId, {
+				assetId:    assetId,
+				version:    null,
+				rendition:  (module.prefs.get("UseHighResolution", false) ? RENDITION_HIGHRES : RENDITION_PREVIEW),
+				repository: module.controller.getRepositoryName(),
+				location:   null,
+				contentId:  null
+			}, (err) => {
+				callback(err, null);
+			});
+		}
+	}
+
+	module.controller.unlinkAsset = function(linkId, callback) { 
+		callback = callback || DEFAULT_CALLBACK;
+		if(!module.host.document) {
+			callback("No active document", null);
+		} else {
+			var docId = module.host.document.id;
+			module.host.updateLink(docId, linkId, {
+				assetId:    null,
+				version:    null,
+				rendition:  null,
+				repository: null,
+				location:   null,
+				contentId:  null
+			}, (err) => {
+				callback(err, null);
+			});
+		}
+	}
+
 	module.controller.placeAsset = function(assetId, callback) {
 		callback = callback || DEFAULT_CALLBACK;
 		if(!module.host.document) {
@@ -2962,15 +3093,17 @@ function initAdobeCC(initCallback)
 							module.controller.downloadAsset(assetId, {rendition: (module.prefs.get("UseHighResolution", false) ? RENDITION_HIGHRES : RENDITION_PREVIEW)}, (err, info) => {
 								if(err) {
 									_controller_setLinkState(linkId, prevstate);
-									callback(err, null);
+									console.error(err);
 								} else {
 									module.host.updateLink(docId, linkId, {
 										path:      info.path,
+										location:  info.location,
 										rendition: info.rendition,
 										contentId: info.contentId,
 									}, (err) => {
 										_controller_setLinkState(linkId, prevstate);
-										callback(err, info);
+										if(err)
+											console.error(err);
 									});
 								}
 							});
@@ -3013,6 +3146,7 @@ function initAdobeCC(initCallback)
 						module.host.updateLink(docId, linkId, {
 							path:      info.path,
 							rendition: info.rendition,
+							location:  info.location,
 							contentId: info.contentId,
 						}, (err) => {
 							_controller_setLinkState(docId, linkId, prevstate);

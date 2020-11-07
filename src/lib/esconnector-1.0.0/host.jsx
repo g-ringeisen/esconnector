@@ -348,9 +348,9 @@ if(!csif || csif.version != "0") {
 			if(doc) {
 				var link = doc.links.itemByID(linkId);
 				if(link) {
+					var file = null;
 					if(properties.hasOwnProperty("path")) {
-						var file = new File(properties["path"]);
-						link.relink(file);
+						file = new File(properties["path"]);
 						delete properties["path"];
 					}
 					if(properties.hasOwnProperty("thumbnail")) {
@@ -361,6 +361,16 @@ if(!csif || csif.version != "0") {
 					for(var key in properties)
 						metadata[key] = properties[key];
 					link.insertLabel("metadata", JSON.stringify(metadata));
+					
+					if(file) {
+						link.relink(file);
+					} else {
+						csif.dispatchEvent("csif.app.event", {
+							eventType: Document.AFTER_LINKS_CHANGED,
+							sourceObject: "Document",
+							sourceId: docId
+						});
+					}
 				}
 			}
 		}
@@ -657,9 +667,9 @@ if(!csif || csif.version != "0") {
 		csif.updateLink = function(docId, linkId, properties) {
 			var link = csif.getLinkById(docId, linkId);
 			if(link) {
+				var file = null;
 				if(properties.hasOwnProperty("path")) {
-					var file = new File(properties["path"]);
-					link.relink(file);
+					file = new File(properties["path"]);
 					delete properties["path"];
 				}
 				if(properties.hasOwnProperty("thumbnail")) {
@@ -670,6 +680,16 @@ if(!csif || csif.version != "0") {
 				for(var key in properties)
 					metadata[key] = properties[key];
 				csif.insertTag(link, "metadata", JSON.stringify(metadata));
+
+				if(file) {
+					link.relink(file);
+				} else {
+					csif.dispatchEvent("csif.app.event", {
+						eventType: "afterLinksChanged",
+						sourceObject: "Document",
+						sourceId: docId
+					});
+				}
 			}
 		}
 
