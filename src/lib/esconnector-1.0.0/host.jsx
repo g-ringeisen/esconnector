@@ -343,6 +343,25 @@ if(!csif || csif.version != "0") {
 			}
 		}
 
+		csif.updateLinks = function(docId, linkIds, properties) {
+			var doc = csif.getDocumentById(docId);
+			if(typeof linkIds == "string") { // Update all links with the given path
+				var path  = linkIds;
+				linkIds   = [];
+				for(var i=0; i<doc.links.length; i++) {
+					if(_getLinkPath(doc.links[i]) == path)
+						linkIds.push(doc.links[i].id);
+				}
+			}
+			if(linkIds instanceof Array) {
+				for(var i=0; i<linkIds.length; i++) {
+					csif.updateLink(docId, linkIds[i], properties);
+				}
+			} else {
+				csif.updateLink(docId, linkIds, properties);
+			}
+		}
+
 		csif.updateLink = function(docId, linkId, properties) {
 			var doc  = csif.getDocumentById(docId);
 			if(doc) {
@@ -664,6 +683,28 @@ if(!csif || csif.version != "0") {
 			}
 		}
 
+		csif.updateLinks = function(docId, linkIds, properties) {
+			var doc = csif.getDocumentById(docId);
+			if(typeof linkIds == "string") { // Update all links with the given path
+				var path  = linkIds;
+				var items = doc.placedItems;
+				linkIds   = [];
+				for(var i=0; i<items.length; i++) {
+					var link = items[i];
+					var file = csif.extractFile(link);
+					if(file != null && file.fsName == path)
+						linkIds.push(link.uuid);
+				}
+			}
+			if(linkIds instanceof Array) {
+				for(var i=0; i<linkIds.length; i++) {
+					csif.updateLink(docId, linkIds[i], properties);
+				}
+			} else {
+				csif.updateLink(docId, linkIds, properties);
+			}
+		}
+		
 		csif.updateLink = function(docId, linkId, properties) {
 			var link = csif.getLinkById(docId, linkId);
 			if(link) {

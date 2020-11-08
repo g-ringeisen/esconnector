@@ -7,10 +7,10 @@
 
 **Step 1** - Unzip the Archive or clone the repository
 
-**Step 2** - Copy the `src` or `build` folder as `ESConnector` in the Adobe CEP folder.
+**Step 2** - Copy the `src` or `build/output` folder as `ESConnector` in the Adobe CEP folder.
 <pre>
 $ cd &lt;your project folder&gt;
-$ cp -rp ./build "/Library/Application Support/Adobe/CEP/extensions/ESConnector"
+$ cp -rp ./build/output "/Library/Application Support/Adobe/CEP/extensions/ESConnector"
 </pre>
 
 In a developpement environement, it is recommanded to create a softlink instead of copying the source so you test your changes immediately.
@@ -36,7 +36,7 @@ $ defaults write ~/Library/Preferences/com.adobe.CSXS.10.plist PlayerDebugMode 1
 
 **Step 1** - Unzip the Archive or clone the repository
 
-**Step 2** - Copy the `src` or `build` folder as `ESConnector` in the Adobe CEP folder.
+**Step 2** - Copy the `src` or `build/output` folder as `ESConnector` in the Adobe CEP folder.
 <pre>
 Win(x86): C:\Program Files\Common Files\Adobe\CEP\extensions
 Win(x64): C:\Program Files (x86)\Common Files\Adobe\CEP\extensions
@@ -109,7 +109,7 @@ Then add a new entry `PlayerDebugMode` of type `string` with the value of `1`.
 ...
 #### `cef.controller.checkLinkIn(linkId, callback)`
 ...
-#### `cef.controller.linkMissingAssets(folderId, callback)`
+#### `cef.controller.linkNonHTTPAssets(folderId, callback)`
 ...
 #### `cef.controller.linkAsset(linkId, assetId, callback)`
 ...

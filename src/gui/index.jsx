@@ -324,5 +324,3 @@
 	};
 
 })(window);
-
-cef.emit("guiloaded");

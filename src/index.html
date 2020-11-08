@@ -17,7 +17,7 @@
     	<link href="./lib/material-ui-4.9.12/material-ui.css" rel="stylesheet"/>
 		
 		<!-- JavaScript Libraries for the Extension Panel -->
-		<script type="text/javascript" src="./lib/esconnector-1.0.0/esconnector.development.js"></script>
+		<script type="text/javascript" src="./lib/esconnector-1.0.0/esconnector.development.js" usebabel></script>
 		
 		<!-- Babel -->
 		<script type="text/javascript" src="./lib/babel-6.26.0/babel.js"></script>
@@ -32,6 +32,9 @@
 		<script type="text/babel" src="./gui/index.jsx"></script>
 		<!-- Translations -->
 		<script type="text/babel" src="./gui/locale.jsx"></script>
+		<!-- Emit babelLoaded -->
+		<script type="text/babel">cef.emit("babelLoaded");</script>
+
 		
 		<script>
 			window.cef.on("ready", function() {

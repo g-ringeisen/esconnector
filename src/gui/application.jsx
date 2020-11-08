@@ -534,7 +534,7 @@
 					if(globalRenditionAction == null && renditionAction != null)
 						globalRenditionAction = renditionAction;
 
-					canToggleRendition = canToggleRendition && selectionCount > 0;
+					canToggleRendition = canToggleRendition && sameRepository && link.assetId != null;
 					canDownload        = canDownload && !busy && sameRepository && synchAction == "downloadLink";
 					canUpload          = canUpload && !busy && synchAction == "uploadLink";
 					canCheckIn         = canCheckIn && !busy && sameRepository && synchAction == "checkLinkIn";
@@ -551,6 +551,8 @@
 					subtitle = link.repository || cef.locale.get("unknown");
 				} else if(link.missing) {
 					subtitle = cef.locale.get("missing");
+				} else if(link.cached) {
+					subtitle = cef.locale.get("localcache");
 				} else {
 					subtitle = cef.locale.get("local");
 				}
@@ -601,7 +603,7 @@
 					<ExpansionPanelSummary expandIcon={<ExpandIcon fontSize="inherit"/>} IconButtonProps={{onClick: () => setExpanded(!expanded)}}>
 						<Box className={classes.summaryLabel}><Typography>{selectionCount > 0 ? selectionCount + " " + cef.locale.get("selected") : ""}</Typography></Box>
 						<ToolTip title={cef.locale.get("toggleRendition")}>
-							<IconButton disabled={!globalRenditionAction != null} color="secondary" onClick={(event) => dispatchAction(event, globalRenditionAction)}>
+							<IconButton disabled={globalRenditionAction == null} color="secondary" onClick={(event) => dispatchAction(event, globalRenditionAction)}>
 								{globalRenditionAction == "setLinkHighres" ? <HighresIcon/> : <LowresIcon/>}
 							</IconButton>
 						</ToolTip>
@@ -929,8 +931,15 @@
 			const lastSelected = useRef(null);
 
 			var sortedAssets = props.assets.sort(function(l1, l2) {
+
+				if(l1.type != l2.type) {
+					if(l1.type == "Folder") return -1;
+					if(l2.type == "Folder") return 1;
+				}
+
 				var v1 = (sortDir == "asc") ? l1[sortProp] : l2[sortProp];
 				var v2 = (sortDir == "asc") ? l2[sortProp] : l1[sortProp];
+
 				if(typeof v1 == 'string') {
 					return v1.localeCompare(v2);
 				} else if(v1 > v2) {
@@ -1143,8 +1152,8 @@
 								<UploadAssetIcon/>
 							</IconButton>
 						</ToolTip>
-						<ToolTip title={cef.locale.get("linkMissingAssets")}>
-							<IconButton disabled={!canRelink} color="secondary" onClick={(event) => dispatchAction(event, "linkMissingAssets")}>
+						<ToolTip title={cef.locale.get("linkNonHTTPAssets")}>
+							<IconButton disabled={!canRelink} color="secondary" onClick={(event) => dispatchAction(event, "linkNonHTTPAssets")}>
 								<RelinkAllIcon/>
 							</IconButton>
 						</ToolTip>
@@ -1545,20 +1554,22 @@
 			}
 
 			function showError(err) {
-				pushMessage("error", err.toString(), 2000);
+				console.error(err);
+				pushMessage("error", err.toString(), 3000);
 			}
 
 			function showMessage(msg) {
-				pushMessage("info", msg.toString(), 2000);
+				console.info(msg);
+				pushMessage("info", msg.toString(), 3000);
 			}
 		
 			function handleAction(event, action) {
 				if(action == "uploadDocument") {
-					cef.controller.uploadDocument(workingDir.id, (err) => {
+					cef.controller.uploadDocument(workingDir.id, (err, asset) => {
 						if(err)
 							showError(err);
 						else
-							showMessage(cef.locale.get("document_uploaded"));
+							showMessage(cef.locale.get("document_uploaded", asset.name));
 					});
 				} else if(action == "checkAssetOut") {
 					event.assetIds.forEach(assetId => {
@@ -1572,14 +1583,14 @@
 						if(err)
 							showError(err);
 						else
-							showMessage(cef.locale.get("document_checked_in"));
+							showMessage(cef.locale.get("document_checked_in", asset.name));
 					});
 				} else if(action == "exportDocumentAsPDF") {
-					cef.controller.exportPDF(workingDir.id, (err) => {
+					cef.controller.exportPDF(workingDir.id, (err, asset) => {
 						if(err)
 							showError(err);
 						else
-							showMessage(cef.locale.get("pdf_exported"));
+							showMessage(cef.locale.get("pdf_exported", asset.name));
 					});
 				} else if(action == "uploadAllLocalLinks") {
 					var doc = cef.controller.getActiveDocument();
@@ -1613,8 +1624,8 @@
 								showError(err);
 						});
 					});
-				} else if(action == "linkMissingAssets") {
-					cef.controller.linkMissingAssets(workingDir.id, (err, count) => {
+				} else if(action == "linkNonHTTPAssets") {
+					cef.controller.linkNonHTTPAssets(workingDir.id, (err, count) => {
 						if(err)
 							showError(err);
 						else
@@ -1710,7 +1721,7 @@
 						}
 					}
 				} else {
-					setErrorMessage("Unkown action '" + action );
+					showError("Unkown action '" + action );
 				}
 			}
 		

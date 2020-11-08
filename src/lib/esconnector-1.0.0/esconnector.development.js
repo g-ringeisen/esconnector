@@ -13,6 +13,8 @@ Illustrator
 
 window.cef = (function() {
 
+	_currentScript = window.document.currentScript;
+
 	/**
 	 * CONST
 	 */
@@ -37,8 +39,9 @@ window.cef = (function() {
 
 	const DEFAULT_DATA_FOLDER   = "CMIS"
 
- 	_currentScript = window.document.currentScript;
-
+	const USE_BABEL             = _currentScript.getAttribute("usebabel") == "" || _currentScript.getAttribute("usebabel") == "true";
+	const USE_JSXBIN            = _currentScript.getAttribute("jsxbin")   == "" || _currentScript.getAttribute("jsxbin")   == "true";
+	 
 	/**
 	 * 
 	 */
@@ -1367,6 +1370,7 @@ window.cef = (function() {
 	var _assetState    = {};
 	var _documentState = {};
 	var _linkState     = {};
+	var _fileState     = {};
 	
 	function _controller_setAssetState(assetId, state) {
 		var oldstate = _assetState[assetId];
@@ -1422,6 +1426,21 @@ window.cef = (function() {
 		return oldstate;
 	}
 
+	function _controller_setFileState(filePath, state) {
+		if(filePath == null)
+			return null;
+		var filePath = window.cep_node.path.normalize(filePath);
+		var oldstate = _fileState[filePath];
+		if(state)
+			_fileState[filePath] = state;
+		else
+			delete _fileState[filePath];
+		if(oldstate != _fileState[filePath]) {
+			// TODO: Trigger events ??
+		}
+		return oldstate;
+	}
+
 	function _controller_getAssetState(assetId) {
 		if(assetId == null || assetId == undefined)
 			return null;
@@ -1438,16 +1457,22 @@ window.cef = (function() {
 		return _linkState[docId + "." + linkId] || null;
 	}
 
+	function _controller_getFileState(filePath) {
+		if(filePath == null)
+			return null;
+		return _fileState[window.cep_node.path.normalize(filePath)];
+	}
+
 	module.controller = eventEmitter({
 
 		getActiveDocument: function() {
 			if(!module.host.document)
 				return null;
 			var doc = module.host.document;
-			doc.state = _controller_getDocumentState(doc.id) || _controller_getAssetState(doc.assetId);
+			doc.state = _controller_getDocumentState(doc.id) || _controller_getAssetState(doc.assetId) || _controller_getFileState(doc.path);
 			if(doc.links) {
 				for(var i=0; i<doc.links.length; i++) {
-					doc.links[i].state = _controller_getLinkState(doc.id, doc.links[i].id) || _controller_getAssetState(doc.links[i].assetId);
+					doc.links[i].state = _controller_getLinkState(doc.id, doc.links[i].id) || _controller_getAssetState(doc.links[i].assetId) || _controller_getFileState(doc.links[i].path);
 					if(doc.links[i].assetId != null && module.repository != null && module.repository.name == doc.links[i].repository) {
 						doc.links[i].thumbnail = module.repository.getContentURL("T-" + doc.links[i].assetId).href;
 					} else {
@@ -1601,7 +1626,7 @@ window.cef = (function() {
 		
 		showLink: function(linkId, callback) { throw new Error(ERR_NOT_IMPLEMENTED, "Method 'showLink' is not implemented"); },
 		
-		linkMissingAssets: function(folderId, callback) { throw new Error(ERR_NOT_IMPLEMENTED, "Method 'linkMissingAssets' is not implemented"); },
+		linkNonHTTPAssets: function(folderId, callback) { throw new Error(ERR_NOT_IMPLEMENTED, "Method 'linkNonHTTPAssets' is not implemented"); },
 
 		linkAsset: function(linkId, assetId, callback) { throw new Error(ERR_NOT_IMPLEMENTED, "Method 'linkAsset' is not implemented"); },
 
@@ -1800,27 +1825,19 @@ function initAdobeCC(initCallback)
 				names.forEach((name) => {
 					window.cep_node.fs.stat(window.cep_node.path.join(path, name), (err, stats) => {
 						if(err) {
-							if(callback)
-								callback(err, null)
-							callback = null;
-						} else {
-							if(stats.isDirectory()) {
-								window.cep_node.fs.dirsize(window.cep_node.path.join(path, name), (err, dirsize) => {
-									if(err) {
-										if(callback)
-											callback(err, null)
-										callback = null;
-									} else {
-										size += dirsize;
-										if(++count >= names.length && callback)
-											callback(null, size);					
-									}
-								});
-							} else {
-								size += stats.size;
+							if(++count >= names.length && callback)
+								callback(null, size);
+						} else if(stats.isDirectory()) {
+							window.cep_node.fs.dirsize(window.cep_node.path.join(path, name), (err, dirsize) => {
+								if(!err)
+									size += dirsize;
 								if(++count >= names.length && callback)
-									callback(null, size);
-							}
+									callback(null, size);					
+							});
+						} else {
+							size += stats.size;
+							if(++count >= names.length && callback)
+								callback(null, size);
 						}
 					});
 				});
@@ -2120,12 +2137,18 @@ function initAdobeCC(initCallback)
 	var _hostInfo = _csinterface.getHostEnvironment();
 	
 	const _updateDocumentInfo = function() {
-		module.host.getDocumentInfo(null, (err, docinfo) => {
-			if(err)
-				console.error(err);
-			module.host.document = docinfo;
-			module.host.emit("documentChanged", module.host.document);
-		});
+		// Use a timeout to prevent too many documentInfo update
+		if(_updateDocumentInfo.timeout)
+			clearTimeout(_updateDocumentInfo.timeout);
+		_updateDocumentInfo.timeout = setTimeout(() => {
+			module.host.getDocumentInfo(null, (err, docinfo) => {
+				if(err)
+					console.error(err);
+				module.host.document = docinfo;
+				module.host.emit("documentChanged", module.host.document);
+			});
+			_updateDocumentInfo.timeout = null;
+		}, 500);
 	}
 
 	const _updateLinkInfo = function(linkId) {
@@ -2145,21 +2168,22 @@ function initAdobeCC(initCallback)
 				}
 			}
 			docinfo.mtime    = stat.mtimeMs;
-			docinfo.outdated = docinfo.lastestVersion === false;
+			docinfo.outdated = docinfo.lastestVersion === false || docinfo.version == null;
 			docinfo.edited   = !docinfo.dtime || docinfo.dtime < docinfo.mtime;
 		}
 		if(docinfo.links && docinfo.links.length > 0) {
+			const excludes = ["assetId", "version", "repository", "location", "rendition", "contentId"]
 			for (var link of docinfo.links) {
 				if(link.path) {
 					var stat     = _getFileStat(link.path);
 					var metadata = module.fs.getFileMetadata(link.path);
 					for (const key in metadata) {
-						if (!link.hasOwnProperty(key)) {
+						if (!link.hasOwnProperty(key) && !excludes.includes(key)) {
 							link[key] = metadata[key];
 						}
 					}
 					link.mtime    = stat.mtimeMs;
-					link.outdated = link.lastestVersion === false;
+					link.outdated = link.lastestVersion === false || link.version == null;
 					link.edited   = !link.dtime || link.dtime < link.mtime;
 				}
 			}
@@ -2204,12 +2228,7 @@ function initAdobeCC(initCallback)
 					module.host.emit("selectionChanged", event.eventData);
 				}
 			} else if(event.eventType == "afterLinksChanged") {
-				if(_handleHostEvents.linkChangedTimeout)
-					clearTimeout(_handleHostEvents.linkChangedTimeout);
-				_handleHostEvents.linkChangedTimeout = setTimeout(() => {
-					_updateDocumentInfo();
-					_handleHostEvents.linkChangedTimeout = null;
-				}, 500);
+				_updateDocumentInfo();
 			} else if(event.eventType == "afterActivate") {
 				_updateDocumentInfo();
 			} else if(event.eventType == "beforeDeactivate" && module.host.document && module.host.document.id == event.sourceId) {
@@ -2233,13 +2252,18 @@ function initAdobeCC(initCallback)
 
 		init: function(callback) {
 			var loadcount = 0;
-			var scripts   = [
+			var scripts   = USE_JSXBIN ? [
+				"./json.jsxbin",
+				"./host.jsxbin"
+			] : [
 				"./json.jsx",
 				"./host.jsx"
 			];		
 			scripts.forEach(script => {
-				var url = new URL(script, _currentScript.src);
-				_csinterface.loadScriptFromURL(url.href, (err) => {
+				var url  = new URL(script, _currentScript.src);
+				var func = USE_JSXBIN ? _csinterface.loadBinAsync.bind(_csinterface) : _csinterface.loadScriptFromURL.bind(_csinterface);
+
+				func(url.href, (err) => {
 					if(err) {
 						callback(err);
 					} else if(++loadcount >= scripts.length) {
@@ -2366,6 +2390,10 @@ function initAdobeCC(initCallback)
 		placeLink: function(docId, path, metadata, callback) {
 			metadata.path = path;
 			_csinterface.callFunction("csif.placeLink", docId, metadata, callback);
+		},
+
+		updateLinks: function(docId, linkIds, metadata, callback) {
+			_csinterface.callFunction("csif.updateLinks", docId, linkIds, metadata, callback);
 		},
 
 		updateLink: function(docId, linkId, metadata, callback) {
@@ -2674,6 +2702,7 @@ function initAdobeCC(initCallback)
 								contentId: contentId,
 								rendition: rendition,
 								repository: repository,
+								cached: filepath.startsWith(module.controller.getCacheFolder()),
 								dtime: filestat.mtimeMs
 							});
 							callback(null, Object.assign({}, metadata, {
@@ -2807,23 +2836,31 @@ function initAdobeCC(initCallback)
 				callback("Cannot upload low resolution link", null);
 			} else if(link.missing) {
 				callback("Missing linked file : " + link.path, null);
+			} else if(_controller_getFileState(link.path) != null) {
+				callback(null, null);
+				//callback("File is being streamed", null);
 			} else {
 				var docId     = module.host.document.id;
+				var filepath  = link.path;
 				var prevstate = _controller_setLinkState(docId, linkId, "uploading");
-				module.repository.createAsset(path, link.name, _getFileData(link.path), (err, asset) => {
+				_controller_setFileState(filepath, "uploading");
+				module.repository.createAsset(path, link.name, _getFileData(filepath), (err, asset) => {
 					if(err) {
+						_controller_setFileState(filepath, null);
 						_controller_setLinkState(docId, linkId, prevstate);
 						callback(err);
 					} else {
 						module.controller.emit("assetChanged", asset.id, asset);
-						var filestat = _getFileStat(link.path);
-						var metadata = _updateAssetFileMetadata(link.path, asset, {
+						// Update file metadata
+						var filestat = _getFileStat(filepath);
+						var metadata = _updateAssetFileMetadata(filepath, asset, {
 							contentId: asset.renditions[RENDITION_HIGHRES].contentId,
 							rendition: RENDITION_HIGHRES,
 							repository: module.repository.name,
 							dtime: filestat.mtimeMs
 						});
-						module.host.updateLink(docId, linkId, {
+						// Update all links pointing to that file
+						module.host.updateLinks(docId, filepath, {
 							assetId:    metadata.assetId,
 							version:    metadata.version,
 							rendition:  metadata.rendition,
@@ -2831,6 +2868,7 @@ function initAdobeCC(initCallback)
 							location:   metadata.location,
 							contentId:  metadata.contentId
 						}, (err) => {
+							_controller_setFileState(filepath, null);
 							_controller_setLinkState(docId, linkId, prevstate);
 							callback(err, asset);
 						});
@@ -2868,6 +2906,7 @@ function initAdobeCC(initCallback)
 					} else {
 						module.host.updateLink(docId, linkId, {
 							path:      info.path,
+							version:   info.version,
 							location:  info.location,
 							rendition: info.rendition,
 							contentId: info.contentId,
@@ -2905,19 +2944,26 @@ function initAdobeCC(initCallback)
 				callback("Link id not from this repository", null);
 			} else if(link.rendition != RENDITION_HIGHRES) {
 				callback("Cannot check low resolution in", null);
+			} else if(_controller_getFileState(link.path) != null) {
+				callback(null, null);
+				//callback("File is being streamed", null);
 			} else {
 				var docId     = module.host.document.id;
+				var filepath  = link.path;
 				var prevstate = _controller_setLinkState(docId, linkId, "uploading");
+				_controller_setFileState(filepath, "uploading");
 				module.controller.lockAsset(link.assetId, (err) => {
 					if(err) {
 						callback(err);
 					} else {
-						var filepath = link.path;
 						module.controller.checkAssetIn(link.assetId, _getFileData(filepath), (err, asset) => {
 							if(err) {
+								_controller_setFileState(filepath, null);
 								_controller_setLinkState(docId, linkId, prevstate);
 								callback(err);
 							} else {
+								module.controller.emit("assetChanged", asset.id, asset);
+								// Update file metadata
 								var filestat = _getFileStat(filepath);
 								var metadata = _updateAssetFileMetadata(filepath, asset, {
 									contentId: asset.renditions[RENDITION_HIGHRES].contentId,
@@ -2925,7 +2971,8 @@ function initAdobeCC(initCallback)
 									repository: module.repository.name,
 									dtime: filestat.mtimeMs
 								});
-								module.host.updateLink(docId, linkId, {
+								// Update all links pointing to that file
+								module.host.updateLinks(docId, filepath, { 
 									assetId:    metadata.assetId,
 									version:    metadata.version,
 									rendition:  metadata.rendition,
@@ -2933,6 +2980,7 @@ function initAdobeCC(initCallback)
 									location:   metadata.location,
 									contentId:  metadata.contentId
 								}, (err) => {
+									_controller_setFileState(filepath, null);
 									_controller_setLinkState(docId, linkId, prevstate);
 									callback(err, asset);
 								});
@@ -2956,7 +3004,7 @@ function initAdobeCC(initCallback)
 		}
 	}
 
-	module.controller.linkMissingAssets = function(folderId, callback) { 
+	module.controller.linkNonHTTPAssets = function(folderId, callback) { 
 		callback = callback || DEFAULT_CALLBACK;
 		if(!module.host.document) {
 			callback("No active document", null);
@@ -2968,7 +3016,7 @@ function initAdobeCC(initCallback)
 			var linkMap   = null;
 			if(module.host.document.links) {
 				for(var link of module.host.document.links) {
-					if(link.missing && !link.assetId) {
+					if(link.assetId == null) {
 						if(!linkMap)
 							linkMap = {};
 						if(!linkMap[link.name])
@@ -3000,7 +3048,6 @@ function initAdobeCC(initCallback)
 										location:   asset.path,
 										contentId:  null
 									}, (err) => {
-										;
 										if(err)
 											console.error(err);
 										else
@@ -3021,7 +3068,7 @@ function initAdobeCC(initCallback)
 					}
 				});
 			} else {
-				_controller_setDocumentState(linkId, prevstate);
+				_controller_setDocumentState(docId, prevstate);
 				callback(null, 0);
 			}
 		}
@@ -3041,7 +3088,10 @@ function initAdobeCC(initCallback)
 				location:   null,
 				contentId:  null
 			}, (err) => {
-				callback(err, null);
+				if(err)
+					callback(err, null);
+				else
+					callback(null, 1);
 			});
 		}
 	}
@@ -3097,6 +3147,7 @@ function initAdobeCC(initCallback)
 								} else {
 									module.host.updateLink(docId, linkId, {
 										path:      info.path,
+										version:   info.version,
 										location:  info.location,
 										rendition: info.rendition,
 										contentId: info.contentId,
@@ -3146,6 +3197,7 @@ function initAdobeCC(initCallback)
 						module.host.updateLink(docId, linkId, {
 							path:      info.path,
 							rendition: info.rendition,
+							version:   info.version,
 							location:  info.location,
 							contentId: info.contentId,
 						}, (err) => {
@@ -3335,10 +3387,14 @@ function initEmulator()
 	});
 
 	// Waitr for Babel to process JSX
-	module.addListener("guiloaded", () => { 
+	if(USE_BABEL) {
+		module.addListener("babelLoaded", () => { 
+			guiLoaded = true;
+			moduleInitCallback();
+		});
+	} else {
 		guiLoaded = true;
-		moduleInitCallback();
-	});
+	}
 	
 	// Load Adobe CC Implementation
 	if(window.__adobe_cep__ || queryParams.get("hostType") == "AdobeCC") {

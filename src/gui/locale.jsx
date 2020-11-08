@@ -15,13 +15,7 @@ cef.locale.define("C", {
 	"local": "Local",
 	"missing": "Missing",
 	"unknown": "Unknown",
-	"dalim:highresolution": "High Resolution",
-	"dalim:highres": "High Resolution",
-	"dalim:lowres": "Low Resolution",
-	"dalim:preview": "Preview",
-	"dalim:thumbnail": "Thumbnail",
-
-	
+	"localcache": "Local cache",
 
 	"Browser": "Browser",
 	"Document": "Document",
@@ -60,7 +54,7 @@ cef.locale.define("C", {
 	"downloadAllMissingLinks": "Download all missing links",
 	"placeAsset": "Place asset",
 	"unlinkAsset": "Unlink asset",
-	"linkMissingAssets": "Link missing assets",
+	"linkNonHTTPAssets": "Link Non-HTTP assets",
 	"downloadLink": "Download asset",
 	"uploadLink": "Upload linked file",
 	"checkLinkIn": "Check link in",
@@ -84,10 +78,17 @@ cef.locale.define("C", {
 	// Alert messages
 	"document_uploaded": "Document '{0}' successfully uploaded",
 	"document_checked_in": "Document '{0}' successfully checked in",
-	"pdf_exported": "Document '{0}' successfully exported as PDF",
+	"pdf_exported": "PDF '{0}' successfully exported",
 	"{0}_asset_linked": "{0} asset linked",
 	"{0}_assets_linked": "{0} assets linked",
 
+	// Renditions
+	"dalim:highresolution": "High Resolution",
+	"dalim:highres": "High Resolution",
+	"dalim:lowres": "Low Resolution",
+	"dalim:preview": "Preview",
+	"dalim:thumbnail": "Thumbnail",
+	
 	// File types
 	"application/vnd.adobe.indesign": "Adobe InDesign",
 	"application/vnd.adobe.indesign-idml-package": "IDML Package",
@@ -117,14 +118,11 @@ cef.locale.define("fr", {
 	
 	"selected": "sélectionné(s)",
 	"local": "Local",
+	"localcache": "Cache local",
 	"missing": "Manquant",
 	"unknown": "Inconnue",
-	"dalim:highresolution": "Haute définition",
-	"dalim:highres": "Haute définition",
-	"dalim:lowres": "Basse définition",
-	"dalim:preview": "Prévisualisation",
-	"dalim:thumbnail": "Miniature",
-
+	
+	
 	"Browser": "Navigateur",
 	"Document": "Document",
 	"Settings" : "Parametres",
@@ -162,7 +160,7 @@ cef.locale.define("fr", {
 	"downloadAllMissingLinks": "Télécharger les fichiers manquants",
 	"placeAsset": "Placer le fichier",
 	"unlinkAsset": "Délier le fichier",
-	"linkMissingAssets": "Lier les fichiers manquants",
+	"linkNonHTTPAssets": "Lier les fichiers non HTTP",
 	"downloadLink": "Télécharger le fichier",
 	"uploadLink": "Envoyer le fichier",
 	"checkLinkIn": "Redéposer le fichier",
@@ -186,9 +184,16 @@ cef.locale.define("fr", {
 	// Alert messages
 	"document_uploaded": "Document '{0}' envoyé",
 	"document_checked_in": "Document '{0}' déposé",
-	"pdf_exported": "Document '{0}' exporté en PDF",
+	"pdf_exported": "PDF '{0}' exporté",
 	"{0}_asset_linked": "{0} asset lié",
 	"{0}_assets_linked": "{0} assets liés",
+
+	// Renditions
+	"dalim:highresolution": "Haute définition",
+	"dalim:highres": "Haute définition",
+	"dalim:lowres": "Basse définition",
+	"dalim:preview": "Prévisualisation",
+	"dalim:thumbnail": "Miniature",
 
 	// File types
 	"video/quicktime": "Vidéo QuickTime"
