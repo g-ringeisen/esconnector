@@ -2174,7 +2174,7 @@ function initAdobeCC(initCallback)
 				module.host.emit("documentChanged", module.host.document);
 			});
 			_updateDocumentInfo.timeout = null;
-		}, 500);
+		}, 100);
 	}
 
 	const _updateLinkInfo = function(linkId) {
@@ -2240,24 +2240,19 @@ function initAdobeCC(initCallback)
 	};
 
 	const _handleHostEvents = function(event) {
-		if(event.type == "documentAfterActivate" || event.type == "documentAfterSave") {
+		if(event.type == "documentAfterActivate" || event.type == "documentAfterSave" || event.type == "documentAfterSaveAs" || event.type == "documentAfterSaveACopy") {
 			_updateDocumentInfo();
-		} else if(event.type == "documentAfterDeactivate") {
-			module.host.document = null;
-			module.host.emit("documentChanged", module.host.document);
-		} else {
-			if(event.eventType == "afterSelectionChanged") {
-				if(module.host.document && event.sourceId == module.host.document.id) {
-					module.host.document.links.forEach((link) => {
-						link.selected = event.eventData.includes(link.id);
-					});
-					module.host.emit("selectionChanged", event.eventData);
-				}
-			} else if(event.eventType == "afterLinksChanged") {
-				_updateDocumentInfo();
-			} else if(event.eventType == "afterActivate" || event.eventType == "afterSave" || event.eventType == "afterSaveAs" || event.eventType == "afterSaveACopy") {
-				_updateDocumentInfo();
-			} else if(event.eventType == "beforeDeactivate" && module.host.document && module.host.document.id == event.sourceId) {
+		} else if(event.type == "documentAfterLinksChanged") {
+			_updateDocumentInfo();
+		} else if(event.type == "documentAfterSelectionChanged") {
+			if(module.host.document && event.data.id == module.host.document.id) {
+				module.host.document.links.forEach((link) => {
+					link.selected = event.data.selection.includes(link.id);
+				});
+				module.host.emit("selectionChanged", event.data.selection);
+			}
+		} else if(event.type == "documentAfterDeactivate" || event.type == "documentBeforeDeactivate") {
+			if(module.host.document != null) {
 				module.host.document = null;
 				module.host.emit("documentChanged", module.host.document);
 			}
@@ -2293,22 +2288,25 @@ function initAdobeCC(initCallback)
 					if(err) {
 						callback(err);
 					} else if(++loadcount >= scripts.length) {
-						if(module.host.name != "IDSN") {
-							_csinterface.addEventListener("documentAfterActivate", (event) => _handleHostEvents(event));
-							_csinterface.addEventListener("documentAfterDeactivate", (event) => _handleHostEvents(event));
-							_csinterface.addEventListener("documentAfterSave", (event) => _handleHostEvents(event));
-						} 
+
+						_csinterface.addEventListener("documentAfterActivate",         (event) => _handleHostEvents(event));
+						_csinterface.addEventListener("documentAfterDeactivate",       (event) => _handleHostEvents(event));
+						_csinterface.addEventListener("documentBeforeDeactivate",      (event) => _handleHostEvents(event));
+						_csinterface.addEventListener("documentAfterSave",             (event) => _handleHostEvents(event));
+						_csinterface.addEventListener("documentAfterSaveAs",           (event) => _handleHostEvents(event));
+						_csinterface.addEventListener("documentAfterSaveACopy",        (event) => _handleHostEvents(event));
+						_csinterface.addEventListener("documentAfterLinksChanged",     (event) => _handleHostEvents(event));
+						_csinterface.addEventListener("documentAfterSelectionChanged", (event) => _handleHostEvents(event));
 						
+						_csinterface.addEventListener("consoleInfo",    (event) => console.log("[JSX]", event.data));
+						_csinterface.addEventListener("consoleError",   (event) => console.error("[JSX]", event.data));
+						_csinterface.addEventListener("consoleWarning", (event) => console.warn("[JSX]", event.data));
+						_csinterface.addEventListener("consoleDebug",   (event) => console.debug("[JSX]", event.data));
+
 						if(module.host.name == "ILST") {
 							setInterval(module.host.checkChanges, 1000);
-						}
-
-						_csinterface.addEventListener("csif.app.event",   (event) => _handleHostEvents(event.data));
-						_csinterface.addEventListener("csif.log.info",    (event) => console.log("[JSX]", event.data));
-						_csinterface.addEventListener("csif.app.error",   (event) => console.error("[JSX]", event.data));
-						_csinterface.addEventListener("csif.app.warning", (event) => console.warn("[JSX]", event.data));
-						_csinterface.addEventListener("csif.app.debug",   (event) => console.debug("[JSX]", event.data));
-
+						}						
+						
 						module.host.getDocumentInfo(null, (err, docinfo) => {
 							if(err) {
 								console.error(err);

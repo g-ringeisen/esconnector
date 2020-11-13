@@ -1,4 +1,3 @@
-
 // Common
 var CSIF_VERSION = "1.0.0";
 
@@ -40,19 +39,19 @@ if(!csif || csif.version != "0") {
 	}
 		
 	csif.info = function(message) {
-		csif.dispatchEvent("csif.log.info", message);
+		csif.dispatchEvent("consoleInfo", message);
 	}
 		
 	csif.error = function(message) {
-		csif.dispatchEvent("csif.log.error", message);
+		csif.dispatchEvent("consoleError", message);
 	}
 		
 	csif.warning = function(message) {
-		csif.dispatchEvent("csif.log.warning", message);
+		csif.dispatchEvent("consoleWarning", message);
 	}
 		
 	csif.debug = function(message) {
-		csif.dispatchEvent("csif.log.debug", message);
+		csif.dispatchEvent("consoleDebug", message);
 	}
 
 	/**
@@ -60,33 +59,12 @@ if(!csif || csif.version != "0") {
 	 */
 	
 
-	csif.selectedLinks = function(doc) {
-		var links     = [];
-		var pageItems = doc.selectedPageItems;
-		while(pageItems.length > 0) {
-			var pageItem = pageItems.pop();
-			if(pageItem.hasOwnProperty('pageItems') && pageItem.pageItems.length > 0) {
-				for(var i=0; i<pageItem.pageItems.length; i++) {
-					pageItems.push(pageItem.pageItems[i]);
-				}
-			}
-			if(pageItem.hasOwnProperty('itemLink')) {
-				links.push(pageItem.itemLink);
-			}
-		}
-		return links;
-	}
-
-	csif.documentInfo = function(doc) {
-		return csif.getDocumentInfo(doc);
-	}
-
 	/**
 	 * Create a new Document
 	 */
 	csif.newDocument = function() {
 		var doc = app.documents.add();
-		return csif.documentInfo(doc);
+		return csif.getDocumentInfo(doc);
 	}
 
 	/**
@@ -95,7 +73,7 @@ if(!csif || csif.version != "0") {
 	csif.openDocument = function( filepath ) {
 		var file = File(filepath);
 		var doc  = app.open(file);
-		return csif.documentInfo(doc);
+		return csif.getDocumentInfo(doc);
 	}
 
 	/**
@@ -104,7 +82,7 @@ if(!csif || csif.version != "0") {
 	csif.closeDocument = function(id, save) {
 		var doc = csif.getDocumentById(id)
 		doc.close(save ? SaveOptions.SAVECHANGES : SaveOptions.DONOTSAVECHANGES);
-		return csif.documentInfo(doc);
+		return csif.getDocumentInfo(doc);
 	}
 
 	csif.getSelection = function() {
@@ -118,39 +96,6 @@ if(!csif || csif.version != "0") {
 			});
 		}
 		return list;
-	}
-
-	// To Support Drag'n Drop
-	//replaceImageString("{image:5000001}", "raster", "C:/Users/Avenser/AppData/Roaming/Adobe/CEP/extensions/DragAndDrop/resources/jpg_example_1.jpg");
-	csif.replaceImageString = function(id, targetCode, imageType, src){
-		var doc = csif.getDocumentById(id);
-		if(!doc)
-			return;
-		for(var lIndex=0; lIndex< doc.layers.length; lIndex++){
-			var cLayer = doc.layers[lIndex];
-			for(var i=0; i< cLayer.textFrames.length; i++){
-				var tFr = cLayer.textFrames[i];
-				if(tFr.contents == targetCode){
-					var x = tFr.left;
-					var y = tFr.top;
-					
-					if(imageType == "raster"){
-						var rasterFile = File(src);
-						var newPlacedItem = doc.placedItems.add();
-						newPlacedItem.file = rasterFile;
-						newPlacedItem.position = Array( x, y );
-						newPlacedItem.embed();
-					}
-					if(imageType == "vector"){
-						var embedDoc = new File(src);
-						var placed = doc.groupItems.createFromFile( embedDoc );
-					}
-					
-					tFr.remove();
-					return;
-				}
-			}
-		}
 	}
 
 
@@ -171,38 +116,62 @@ if(!csif || csif.version != "0") {
 			return path;
 		}
 
-		csif.dispatchApplicationEvent = function(event) {
-			var appEvent = {
-				eventType: event.eventType,
-			}
-			
-			if(appEvent.eventType == "afterSelectionChanged") {
-				var doc = csif.getActiveDocument();
-				if(doc != null) {
-					var links = csif.selectedLinks(doc);
-					var ids   = [];
-					for(var i=0; i<links.length; i++)
-						ids.push(links[i].id);
-					appEvent.sourceObject = doc.reflect.name;
-					appEvent.sourceId     = doc.id;
-					appEvent.eventData    = ids;
-				} else {
-					appEvent.sourceObject = event.target.reflect.name,
-					appEvent.sourceId     = event.target.hasOwnProperty('id') ? event.target.id : null
-					appEvent.eventData    = [];
+		function _getEventName(event) {
+			const MAP = {
+				"afterActivate":         "documentAfterActivate",
+				"beforeDeactivate":      "documentBeforeDeactivate",
+				"afterSelectionChanged": "documentAfterSelectionChanged",
+				"afterLinksChanged":     "documentAfterLinksChanged",
+				"afterSave":             "documentAfterSave",
+				"afterSaveAs":           "documentAfterSaveAs",
+				"afterSaveACopy":        "documentAfterSaveACopy",
+				"afterUpdate":           "documentAfterUpdate"
+			};
+			return MAP[event.eventType] || event.eventType;
+		}
+
+		_getSelectedLinks = function(doc) {
+			var links     = [];
+			var pageItems = doc.selectedPageItems;
+			while(pageItems.length > 0) {
+				var pageItem = pageItems.pop();
+				if(pageItem.hasOwnProperty('pageItems') && pageItem.pageItems.length > 0) {
+					for(var i=0; i<pageItem.pageItems.length; i++) {
+						pageItems.push(pageItem.pageItems[i]);
+					}
 				}
-			} else {
-				appEvent.sourceObject = event.target.reflect.name,
-				appEvent.sourceId     = event.target.hasOwnProperty('id') ? event.target.id : null
+				if(pageItem.hasOwnProperty('itemLink')) {
+					links.push(pageItem.itemLink);
+				}
+			}
+			return links;
+		}
+
+		csif.dispatchApplicationEvent = function(event) {
+
+			var data = {
+				id: event.target.hasOwnProperty('id') ? event.target.id : null,
+				cls: event.target.reflect.name
+			};
+			
+			if(event.eventType == "afterSelectionChanged") {
+				var doc = csif.getActiveDocument();
+				data.id  = doc.id;
+				data.cls = doc.reflect.name;
+				data.selection = [];
+				if(doc != null) {
+					var links = _getSelectedLinks(doc);
+					for(var i=0; i<links.length; i++)
+						data.selection.push(links[i].id);
+				}
 			}
 
-			csif.dispatchEvent("csif.app.event", appEvent);
+			csif.dispatchEvent(_getEventName(event), data);
 		}
 
 		csif.init = function() {
+			// Dispatch extra InDesign events
 			app.addEventListener(Application.AFTER_SELECTION_CHANGED, csif.dispatchApplicationEvent);
-			app.addEventListener(Document.AFTER_ACTIVATE,             csif.dispatchApplicationEvent);
-			app.addEventListener(Document.BEFORE_DEACTIVATE,          csif.dispatchApplicationEvent);
 			app.addEventListener(Document.AFTER_LINKS_CHANGED,        csif.dispatchApplicationEvent);
 			app.addEventListener(Document.AFTER_SAVE,                 csif.dispatchApplicationEvent);
 			app.addEventListener(Document.AFTER_SAVE_AS,              csif.dispatchApplicationEvent);
@@ -211,9 +180,8 @@ if(!csif || csif.version != "0") {
 		}
 
 		csif.release = function() {
+			// Cancel InDesign events dispatching
 			app.removeEventListener(Application.AFTER_SELECTION_CHANGED, csif.dispatchApplicationEvent);
-			app.removeEventListener(Document.AFTER_ACTIVATE,             csif.dispatchApplicationEvent);
-			app.removeEventListener(Document.BEFORE_DEACTIVATE,          csif.dispatchApplicationEvent);
 			app.removeEventListener(Document.AFTER_LINKS_CHANGED,        csif.dispatchApplicationEvent);
 			app.removeEventListener(Document.AFTER_SAVE,                 csif.dispatchApplicationEvent);
 			app.removeEventListener(Document.AFTER_SAVE_AS,              csif.dispatchApplicationEvent);
@@ -274,7 +242,7 @@ if(!csif || csif.version != "0") {
 			
 			var list = [];
 			var links = doc.links;
-			var selectedLinks = csif.selectedLinks(doc);
+			var selectedLinks = _getSelectedLinks(doc);
 			var pageLinkMap = {};
 
 			// Retreive Links pages
@@ -322,7 +290,7 @@ if(!csif || csif.version != "0") {
 			} catch(e) {
 				csif.error(e);
 			}
-			return csif.documentInfo(doc);
+			return csif.getDocumentInfo(doc);
 		}
 
 		csif.saveDocument = function(id, filepath) {
@@ -333,7 +301,7 @@ if(!csif || csif.version != "0") {
 			} else {
 				doc.save();
 			}
-			return csif.documentInfo(doc);
+			return csif.getDocumentInfo(doc);
 		}
 
 		csif.placeLink = function(docId, properties) {
@@ -522,10 +490,8 @@ if(!csif || csif.version != "0") {
 			if(documentChanged || placedItemsChanged || selectionChanged) {
 				csif.docstate = docstate;
 				if(placedItemsChanged) {
-					csif.dispatchEvent("csif.app.event", {
-						eventType: "afterLinksChanged",
-						sourceObject: "Document",
-						sourceId: csif.docstate.id
+					csif.dispatchEvent("documentAfterLinksChanged", {
+						id: csif.docstate.id
 					});
 				}
 
@@ -534,11 +500,9 @@ if(!csif || csif.version != "0") {
 					for(var i=0; i<csif.docstate.selection.length; i++)
 						if(csif.docstate.selection[i])
 							ids.push(i);
-					csif.dispatchEvent("csif.app.event", {
-						eventType: "afterSelectionChanged",
-						sourceObject: "Document",
-						sourceId: csif.docstate.id,
-						eventData: ids
+					csif.dispatchEvent("documentAfterSelectionChanged", {
+						id: csif.docstate.id,
+						selection: ids
 					});
 				}
 			}
@@ -648,7 +612,7 @@ if(!csif || csif.version != "0") {
 			} else {
 				doc.save();
 			}
-			return csif.documentInfo(doc);
+			return csif.getDocumentInfo(doc);
 		}
 
 		csif.placeLink = function(docId, properties) {
@@ -731,10 +695,8 @@ if(!csif || csif.version != "0") {
 				if(file) {
 					link.relink(file);
 				} else {
-					csif.dispatchEvent("csif.app.event", {
-						eventType: "afterLinksChanged",
-						sourceObject: "Document",
-						sourceId: docId
+					csif.dispatchEvent("documentAfterLinksChanged", {
+						id: docId
 					});
 				}
 			}
@@ -785,7 +747,7 @@ if(!csif || csif.version != "0") {
 			} else {
 				doc.save();
 			}
-			return csif.documentInfo(doc);
+			return csif.getDocumentInfo(doc);
 		}
 
 		csif.exportPDF = function(id, filepath) {
