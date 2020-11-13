@@ -16,6 +16,7 @@ cef.locale.define("C", {
 	"missing": "Missing",
 	"unknown": "Unknown",
 	"localcache": "Local cache",
+	"fileconflict": "File changed locally and remotely",
 
 	"Browser": "Browser",
 	"Document": "Document",
@@ -121,12 +122,12 @@ cef.locale.define("fr", {
 	"localcache": "Cache local",
 	"missing": "Manquant",
 	"unknown": "Inconnue",
-	
+	"fileconflict": "Fichiers modifié en local et sur le serveur",
 	
 	"Browser": "Navigateur",
 	"Document": "Document",
 	"Settings" : "Parametres",
-
+	
 	"AssetID" : "Identifiant",
 	"AssetName" : "Nom",
 	"AssetSize" : "Taille",

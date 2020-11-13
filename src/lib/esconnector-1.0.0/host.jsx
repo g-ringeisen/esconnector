@@ -204,6 +204,9 @@ if(!csif || csif.version != "0") {
 			app.addEventListener(Document.AFTER_ACTIVATE,             csif.dispatchApplicationEvent);
 			app.addEventListener(Document.BEFORE_DEACTIVATE,          csif.dispatchApplicationEvent);
 			app.addEventListener(Document.AFTER_LINKS_CHANGED,        csif.dispatchApplicationEvent);
+			app.addEventListener(Document.AFTER_SAVE,                 csif.dispatchApplicationEvent);
+			app.addEventListener(Document.AFTER_SAVE_AS,              csif.dispatchApplicationEvent);
+			app.addEventListener(Document.AFTER_SAVE_A_COPY,          csif.dispatchApplicationEvent);
 			app.addEventListener(Link.AFTER_UPDATE,                   csif.dispatchApplicationEvent);
 		}
 
@@ -212,6 +215,9 @@ if(!csif || csif.version != "0") {
 			app.removeEventListener(Document.AFTER_ACTIVATE,             csif.dispatchApplicationEvent);
 			app.removeEventListener(Document.BEFORE_DEACTIVATE,          csif.dispatchApplicationEvent);
 			app.removeEventListener(Document.AFTER_LINKS_CHANGED,        csif.dispatchApplicationEvent);
+			app.removeEventListener(Document.AFTER_SAVE,                 csif.dispatchApplicationEvent);
+			app.removeEventListener(Document.AFTER_SAVE_AS,              csif.dispatchApplicationEvent);
+			app.removeEventListener(Document.AFTER_SAVE_A_COPY,          csif.dispatchApplicationEvent);
 			app.removeEventListener(Link.AFTER_UPDATE,                   csif.dispatchApplicationEvent);
 		}
 
@@ -382,7 +388,12 @@ if(!csif || csif.version != "0") {
 					link.insertLabel("metadata", JSON.stringify(metadata));
 					
 					if(file) {
-						link.relink(file);
+						if(file.fsName == _getLinkPath(link)) {
+							csif.info("Do Update");
+							link.update();
+						} else {
+							link.relink(file);					
+						}
 					} else {
 						csif.dispatchEvent("csif.app.event", {
 							eventType: Document.AFTER_LINKS_CHANGED,
@@ -397,24 +408,19 @@ if(!csif || csif.version != "0") {
 		csif.showLink = function(docId, linkId) {
 			var doc  = this.getDocumentById(docId);
 			if(doc) {
-				var items = doc.allPageItems;
-				for(var i=0; i < items.length; i++) {
-					var item = items[i];
-					if(item.hasOwnProperty('itemLink')) {
-						if(item.itemLink && item.itemLink.id == linkId) {
-							item.select();
-							break;
-						}
-					}
-				}
+				var link = doc.links.itemByID(linkId);
+				if(link)
+					link.show();
 			}
 		}
 
 		csif.getPDFExportPresets = function() {
 			var names   = [];
 			var presets = app.pdfExportPresets;
-			for(var i=0; i<presets.length; i++) {
-				names.push(presets[i].name);
+			if(presets) {
+				for(var i=0; i < presets.length; i++) {
+					names.push(presets[i].name);
+				}
 			}
 			return names;
 		}

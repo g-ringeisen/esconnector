@@ -24,11 +24,14 @@ window.cef = (function() {
 	const ERR_INVALID_ARGS      = 103;
 	const ERR_UNKOWN_TYPE       = 104;
 	const ERR_REPOSITORY_ERROR  = 105;
-	const ERR_ILLEGAL_STATE		= 106;
+	const ERR_ILLEGAL_STATE	    = 106;
+	const ERR_FILE_NOT_FOUND    = 107;
+	const ERR_CONTROLLER_ERROR  = 108;
 
 	const ERR_HTTP_ERROR        = 200;
 
 	const ERR_SCRIPT_ERROR		= 300;
+	const ERR_USER_CANCELLATION = 301;
 	
 	const RENDITION_HIGHRES     = "dalim:highresolution";
 	const RENDITION_LOWRES      = "dalim:lowres";
@@ -260,6 +263,30 @@ window.cef = (function() {
 						resizeImage("data:" + xhr.getResponseHeader("Content-Type") + ";base64," + data, 40, 40, callback)
 					}
 				});
+			},
+
+			retainCallback: function(key, callback) {
+				if(!module.util.retainCallback.map)
+					module.util.retainCallback.map = {};
+				var stack = module.util.retainCallback.map[key];
+				if(!stack)
+					stack = module.util.retainCallback.map[key] = [];
+				stack.push(callback);
+			},
+
+			releaseCallbacks: function(key) {
+				var params = Array.prototype.slice.call(arguments, 1);
+				var stack  = module.util.retainCallback.map ? module.util.retainCallback.map[key] : null;
+				if(stack) {
+					for (var callback of stack) {
+						try {
+							callback.apply(null, [...params]);
+						} catch(e) {
+							console.error(e);
+						}
+					}
+					delete module.util.retainCallback.map[key];
+				}
 			}
 		},
 
@@ -290,6 +317,24 @@ window.cef = (function() {
 	
 			clear() {
 				return window.localStorage.clear();
+			}
+		},
+
+		state: {
+			set(key, state) {
+				if(!module.state.stateMap)
+					module.state.stateMap = {};
+
+				var prevstate = module.state.stateMap[key];
+				if(state != null)
+					module.state.stateMap[key] = state;
+				else
+					delete module.state.stateMap[key];
+				return prevstate;
+			},
+
+			get(key) {
+				return module.state.stateMap == null ? null : module.state.stateMap[key];
 			}
 		},
 
@@ -803,7 +848,7 @@ window.cef = (function() {
 						}
 					});
 				} else {
-					callback("Unable to connect", authorization);
+					callback(new Error(ERR_REPOSITORY_ERROR, "Unable to connect"), authorization);
 				}
 			}
 
@@ -850,6 +895,8 @@ window.cef = (function() {
 												callback(err);
 											} else {
 												obj.versions = this._convertObjectVersions(data);
+												if(obj.versions && obj.versions.length > 0)
+													obj.hasChildren = true;
 												callback(null, obj);
 											}
 										});
@@ -1017,7 +1064,7 @@ window.cef = (function() {
 							}
 						});
 					} else {
-						callback("No content set", null)
+						callback(new Error(ERR_INVALID_ARGS, "No content set"), null)
 					}
 				}
 			});
@@ -1077,7 +1124,7 @@ window.cef = (function() {
 				if(err) {
 					callback(err);
 				} else if(!asset.checkedOut || !asset.checkOutId) {
-					callback("Asset not checked out");
+					callback(new Error(ERR_ILLEGAL_STATE, "Asset not checked out"));
 				//} else if(asset.checkOutUser != this.authorization.account) {
 				//	callback("You're not the owner");
 				} else {
@@ -1208,6 +1255,7 @@ window.cef = (function() {
 					parentId: v(p["cmis:parentId"]),
 					version: v(p["cmis:versionLabel"]),
 					lastestVersion: v(p["cmis:isLatestVersion"]),
+					hasChildren: true, 
 					permissions: {
 						canCreateDocument: a.canCreateDocument || false,
 						canCreateFolder: a.canCreateFolder || false
@@ -1259,9 +1307,10 @@ window.cef = (function() {
 				if(p && !v(p["cmis:isPrivateWorkingCopy"])) {
 					var o = { id: v(p["cmis:objectId"]) };
 					
-					o.version    = o.id.split(":")[2];
-					o.contentId  = "S-" + o.id;
-					o.contentURL = this.getContentURL(o.contentId).href;
+					o.version     = o.id.split(":")[2];
+					o.contentId   = "S-" + o.id;
+					o.contentURL  = this.getContentURL(o.contentId).href;
+					o.hasChildren = false;
 
 					if(r) {
 						o.renditions = {
@@ -1367,19 +1416,10 @@ window.cef = (function() {
 	/**
 	 * CONTROLLER
 	 */
-	var _assetState    = {};
-	var _documentState = {};
-	var _linkState     = {};
-	var _fileState     = {};
-	
 	function _controller_setAssetState(assetId, state) {
-		var oldstate = _assetState[assetId];
-		if(state)
-			_assetState[assetId] = state;
-		else
-			delete _assetState[assetId];
-		if(oldstate != _assetState[assetId]) {
-			module.controller.emit("assetChanged", assetId, {state: _assetState[assetId]});
+		var prevstate = module.state.set("A:" + assetId, state);
+		if(prevstate != state) {
+			module.controller.emit("assetChanged", assetId, {state: state});
 			if(module.host.document) {
 				if(module.host.document.assetId == assetId) {
 					module.host.emit("documentChanged", module.host.document);
@@ -1394,73 +1434,55 @@ window.cef = (function() {
 				}
 			}
 		}
-		return oldstate;
+		return prevstate;
 	}
 
 	function _controller_setDocumentState(docId, state) {
-		var oldstate = _documentState[docId];
-		if(state)
-			_documentState[docId] = state;
-		else
-			delete _documentState[docId];
-		if(oldstate != _documentState[docId]) {
+		var prevstate = module.state.set("D:" + docId, state);
+		if(prevstate != state) {
 			if(module.host.document.id == docId) {
 				module.host.emit("documentChanged", module.host.document);
 			}
 		}
-		return oldstate;
+		return prevstate;
 	}
 
 	function _controller_setLinkState(docId, linkId, state) {
-		var linkUid = docId + "." + linkId;
-		var oldstate = _linkState[linkUid];
-		if(state)
-			_linkState[linkUid] = state;
-		else
-			delete _linkState[linkUid];
-		if(oldstate != _linkState[linkUid]) {
+		var prevstate = module.state.set("L:" + docId + "." + linkId, state);
+		if(prevstate != state) {
 			if(module.host.document.id == docId) {
 				module.host.emit("documentChanged", module.host.document);
 			}
 		}
-		return oldstate;
+		return prevstate;
 	}
 
 	function _controller_setFileState(filePath, state) {
 		if(filePath == null)
 			return null;
-		var filePath = window.cep_node.path.normalize(filePath);
-		var oldstate = _fileState[filePath];
-		if(state)
-			_fileState[filePath] = state;
-		else
-			delete _fileState[filePath];
-		if(oldstate != _fileState[filePath]) {
+		var prevstate = module.state.set("F:" + window.cep_node.path.normalize(filePath), state);
+		if(prevstate != state) {
 			// TODO: Trigger events ??
 		}
-		return oldstate;
+		return prevstate;
 	}
 
 	function _controller_getAssetState(assetId) {
-		if(assetId == null || assetId == undefined)
-			return null;
-		return _assetState[assetId] || null;
+		return module.state.get("A:" + assetId);
 	}
 
 	function _controller_getDocumentState(docId) {
-		if(docId == null || docId == undefined)
-			return null;
-		return _documentState[docId] || null;
+		return module.state.get("D:" + docId);
 	}
-
+	
 	function _controller_getLinkState(docId, linkId) {
-		return _linkState[docId + "." + linkId] || null;
+		return module.state.get("L:" + docId + "." + linkId);
 	}
 
 	function _controller_getFileState(filePath) {
 		if(filePath == null)
 			return null;
-		return _fileState[window.cep_node.path.normalize(filePath)];
+		return module.state.get("F:" + window.cep_node.path.normalize(filePath));
 	}
 
 	module.controller = eventEmitter({
@@ -1507,7 +1529,7 @@ window.cef = (function() {
 				if(err) {
 					callback(err, null);
 				} else {
-					asset.state = _assetState[asset.id] || "";
+					asset.state = _controller_getAssetState(asset.id);
 					callback(null, asset);
 				}
 			});
@@ -1519,7 +1541,7 @@ window.cef = (function() {
 					callback(err, null);
 				} else {
 					assets.forEach(asset => {
-						asset.state = _assetState[asset.id] || "";
+						asset.state = _controller_getAssetState(asset.id);
 					});
 					callback(null, assets);
 				}
@@ -1532,7 +1554,7 @@ window.cef = (function() {
 					callback(err, null);
 				} else {
 					assets.forEach(asset => {
-						asset.state = _assetState[asset.id] || "";
+						asset.state = _controller_getAssetState(asset.id);
 					});
 					callback(null, assets);
 				}
@@ -1710,8 +1732,12 @@ function initAdobeCC(initCallback)
 					}
 					if(response.error) {
 						var error = response.error;
-						if(error.message)
-							error = new Error(ERR_SCRIPT_ERROR, (error.name ? error.name + " - " : "") + (error.line ? "line " + error.line + " - " : "") + error.message, null);
+						if(error.message) {
+							if(error.message == "User cancelled this action.")
+								error = new Error(ERR_USER_CANCELLATION, (error.name ? error.name + " - " : "") + (error.line ? "line " + error.line + " - " : "") + error.message, null);
+							else
+								error = new Error(ERR_SCRIPT_ERROR, (error.name ? error.name + " - " : "") + (error.line ? "line " + error.line + " - " : "") + error.message, null);
+						}
 						c(error, null);
 					} else {
 						c(null, response.result);
@@ -2169,7 +2195,7 @@ function initAdobeCC(initCallback)
 			}
 			docinfo.mtime    = stat.mtimeMs;
 			docinfo.outdated = docinfo.lastestVersion === false || docinfo.version == null;
-			docinfo.edited   = !docinfo.dtime || docinfo.dtime < docinfo.mtime;
+			docinfo.edited   = (docinfo.dtime || 0) < (docinfo.mtime || 0);
 		}
 		if(docinfo.links && docinfo.links.length > 0) {
 			const excludes = ["assetId", "version", "repository", "location", "rendition", "contentId"]
@@ -2184,7 +2210,7 @@ function initAdobeCC(initCallback)
 					}
 					link.mtime    = stat.mtimeMs;
 					link.outdated = link.lastestVersion === false || link.version == null;
-					link.edited   = !link.dtime || link.dtime < link.mtime;
+					link.edited   = !link.missing && (link.dtime || 0) < (link.mtime || 0);
 				}
 			}
 		}
@@ -2214,7 +2240,7 @@ function initAdobeCC(initCallback)
 	};
 
 	const _handleHostEvents = function(event) {
-		if(event.type == "documentAfterActivate") {
+		if(event.type == "documentAfterActivate" || event.type == "documentAfterSave") {
 			_updateDocumentInfo();
 		} else if(event.type == "documentAfterDeactivate") {
 			module.host.document = null;
@@ -2229,7 +2255,7 @@ function initAdobeCC(initCallback)
 				}
 			} else if(event.eventType == "afterLinksChanged") {
 				_updateDocumentInfo();
-			} else if(event.eventType == "afterActivate") {
+			} else if(event.eventType == "afterActivate" || event.eventType == "afterSave" || event.eventType == "afterSaveAs" || event.eventType == "afterSaveACopy") {
 				_updateDocumentInfo();
 			} else if(event.eventType == "beforeDeactivate" && module.host.document && module.host.document.id == event.sourceId) {
 				module.host.document = null;
@@ -2270,6 +2296,7 @@ function initAdobeCC(initCallback)
 						if(module.host.name != "IDSN") {
 							_csinterface.addEventListener("documentAfterActivate", (event) => _handleHostEvents(event));
 							_csinterface.addEventListener("documentAfterDeactivate", (event) => _handleHostEvents(event));
+							_csinterface.addEventListener("documentAfterSave", (event) => _handleHostEvents(event));
 						} 
 						
 						if(module.host.name == "ILST") {
@@ -2425,12 +2452,16 @@ function initAdobeCC(initCallback)
 				if(err) {
 					callback(err, null);
 				} else {
-					var stat = window.cep_node.fs.statSync(filePath);
-					callback(null, {
-						path: filePath,
-						name: fileName,
-						size: stat.size
-					});
+					if(window.cep_node.fs.existsSync(filePath)) {
+						var stat = window.cep_node.fs.statSync(filePath);
+						callback(null, {
+							path: filePath,
+							name: fileName,
+							size: stat.size
+						});
+					} else {
+						callback(new Error(ERR_USER_CANCELLATION, "User canceled the export"), null);
+					}
 				}
 			});
 		},
@@ -2675,45 +2706,60 @@ function initAdobeCC(initCallback)
 				var repository  = module.repository.name;
 				var filename    = asset.renditions && asset.renditions[rendition] ? asset.renditions[rendition].contentName : null;
 				var filepath    = options.destination || module.controller.getCacheFolder() + "/" + repository + "/" + contentId.replace(/:/gi, '-') + "/" + filename;
-				var filestat    = _getFileStat(filepath);
-				if(filestat) {
+				var cbkey       = "download:" + filepath;
+				var filestate   = _controller_getFileState(filepath);
+				
+				if(filestate) {
 					_controller_setAssetState(assetId, prevstate);
-					callback(null, Object.assign({}, module.fs.getFileMetadata(filepath), {
-						path:  filepath,
-						name:  filename,
-						size:  filestat.size,
-						mtime: filestat.mtimeMs,
-						ctime: filestat.ctimeMs
-					}));
+					if(filestate == "downloading")
+						module.util.retainCallback(cbkey, callback);
+					else
+						callback(new Error(ERR_ILLEGAL_STATE, "File is being streamed"));
 				} else {
-					module.repository.getContent(contentId, {format: "file", output: filepath}, (err, filepath) => {
+					var filestat = _getFileStat(filepath);
+					if(filestat) {
 						_controller_setAssetState(assetId, prevstate);
-						if(err) {
-							try {
-								if(module.fs.existsSync(filepath))
-									module.fs.unlinkSync(filepath);
-							} catch(err) {
-								// silent fail
+						callback(null, Object.assign({}, module.fs.getFileMetadata(filepath), {
+							path:  filepath,
+							name:  filename,
+							size:  filestat.size,
+							mtime: filestat.mtimeMs,
+							ctime: filestat.ctimeMs
+						}));
+					} else {
+						_controller_setFileState(filepath, "downloading");
+						module.util.retainCallback(cbkey, callback);
+						
+						module.repository.getContent(contentId, {format: "file", output: filepath}, (err, filepath) => {
+							_controller_setFileState(filepath, null);
+							_controller_setAssetState(assetId, prevstate);
+							if(err) {
+								try {
+									if(module.fs.existsSync(filepath))
+										module.fs.unlinkSync(filepath);
+								} catch(err) {
+									// silent fail
+								}
+								module.util.releaseCallbacks(cbkey, err, null);
+							} else {
+								var filestat = _getFileStat(filepath);
+								var metadata = _updateAssetFileMetadata(filepath, asset, {
+									contentId: contentId,
+									rendition: rendition,
+									repository: repository,
+									cached: filepath.startsWith(module.controller.getCacheFolder()),
+									dtime: filestat.mtimeMs
+								});
+								module.util.releaseCallbacks(cbkey, null, Object.assign({}, metadata, {
+									path: filepath,
+									name: filename,
+									size: filestat.size,
+									mtime: filestat.mtimeMs,
+									ctime: filestat.ctimeMs
+								}));
 							}
-							callback(err, null);
-						} else {
-							var filestat = _getFileStat(filepath);
-							var metadata = _updateAssetFileMetadata(filepath, asset, {
-								contentId: contentId,
-								rendition: rendition,
-								repository: repository,
-								cached: filepath.startsWith(module.controller.getCacheFolder()),
-								dtime: filestat.mtimeMs
-							});
-							callback(null, Object.assign({}, metadata, {
-								path: filepath,
-								name: filename,
-								size: filestat.size,
-								mtime: filestat.mtimeMs,
-								ctime: filestat.ctimeMs
-							}));
-						}
-					});
+						});
+					}
 				}
 			}
 		});
@@ -2776,11 +2822,11 @@ function initAdobeCC(initCallback)
 	module.controller.checkDocumentIn = function(callback) {
 		callback = callback || DEFAULT_CALLBACK;
 		if(!module.host.document) {
-			callback("No active document", null);
+			callback(new Error(ERR_CONTROLLER_ERROR, "No active document"), null);
 		} else if(!module.host.document.assetId) {
-			callback("Document is not from this repository", null);
+			callback(new Error(ERR_CONTROLLER_ERROR, "Document is not from this repository"), null);
 		} else if(module.host.document.repository != module.repository.name) {
-			callback("Document is not from this repository", null);
+			callback(new Error(ERR_CONTROLLER_ERROR, "Document is not from this repository"), null);
 		} else {
 			var docId     = module.host.document.id;
 			var prevstate = _controller_setDocumentState(docId, "uploading");
@@ -2819,9 +2865,9 @@ function initAdobeCC(initCallback)
 	module.controller.uploadLink = function(linkId, path, callback) {
 		callback = callback || DEFAULT_CALLBACK;
 		if(!module.host.document) {
-			callback("No active document", null);
+			callback(new Error(ERR_CONTROLLER_ERROR, "No active document"), null);
 		} else if(!module.host.document.links) {
-			callback("Document has no link", null);
+			callback(new Error(ERR_CONTROLLER_ERROR, "Active document does not support links"), null);
 		} else {
 			var link = null;
 			for(var i=0; i<module.host.document.links.length; i++) {
@@ -2831,14 +2877,13 @@ function initAdobeCC(initCallback)
 				}
 			}
 			if(!link) {
-				callback("Invalid link ID: " + linkId, null);
+				callback(new Error(ERR_INVALID_ARGS, "Invalid link ID: " + linkId), null);
 			} else if(link.rendition != null && link.rendition != RENDITION_HIGHRES) {
-				callback("Cannot upload low resolution link", null);
+				callback(new Error(ERR_ILLEGAL_STATE, "Cannot upload low resolution link"), null);
 			} else if(link.missing) {
-				callback("Missing linked file : " + link.path, null);
+				callback(new Error(ERR_FILE_NOT_FOUND, "Missing linked file : " + link.path), null);
 			} else if(_controller_getFileState(link.path) != null) {
-				callback(null, null);
-				//callback("File is being streamed", null);
+				callback(new Error(ERR_ILLEGAL_STATE, "File is being streamed"), null);
 			} else {
 				var docId     = module.host.document.id;
 				var filepath  = link.path;
@@ -2881,9 +2926,9 @@ function initAdobeCC(initCallback)
 	module.controller.downloadLink = function(linkId, callback) {
 		callback = callback || DEFAULT_CALLBACK;
 		if(!module.host.document) {
-			callback("No active document", null);
+			callback(new Error(ERR_CONTROLLER_ERROR, "No active document"), null);
 		} else if(!module.host.document.links) {
-			callback("Document has no link", null);
+			callback(new Error(ERR_CONTROLLER_ERROR, "Document has no link"), null);
 		} else {
 			var link  = null;
 			for(var i=0; i<module.host.document.links.length; i++) {
@@ -2893,9 +2938,9 @@ function initAdobeCC(initCallback)
 				}
 			}
 			if(!link) {
-				callback("Invalid link ID: " + linkId, null);
+				callback(new Error(ERR_INVALID_ARGS, "Invalid link ID: " + linkId), null);
 			} else if(!link.assetId || link.repository != module.repository.name) {
-				callback("Link id not from this repository", null);
+				callback(new Error(ERR_CONTROLLER_ERROR, "Link id not from this repository"), null);
 			} else {
 				var docId = module.host.document.id;
 				var prevstate = _controller_setLinkState(docId, linkId, "downloading");
@@ -2904,7 +2949,7 @@ function initAdobeCC(initCallback)
 						_controller_setLinkState(docId, linkId, prevstate);
 						callback(err, null);
 					} else {
-						module.host.updateLink(docId, linkId, {
+						module.host.updateLinks(docId, link.path, {
 							path:      info.path,
 							version:   info.version,
 							location:  info.location,
@@ -2927,9 +2972,9 @@ function initAdobeCC(initCallback)
 	module.controller.checkLinkIn = function(linkId, callback) {
 		callback = callback || DEFAULT_CALLBACK;
 		if(!module.host.document) {
-			callback("No active document", null);
+			callback(new Error(ERR_CONTROLLER_ERROR, "No active document"), null);
 		} else if(!module.host.document.links) {
-			callback("Document has no link", null);
+			callback(new Error(ERR_CONTROLLER_ERROR, "Document has no link"), null);
 		} else {
 			var link = null;
 			for(var i=0; i<module.host.document.links.length; i++) {
@@ -2939,14 +2984,13 @@ function initAdobeCC(initCallback)
 				}
 			}
 			if(!link) {
-				callback("Invalid link ID: " + linkId, null);
+				callback(new Error(ERR_INVALID_ARGS, "Invalid link ID: " + linkId), null);
 			} else if(!link.assetId || link.repository != module.repository.name) {
-				callback("Link id not from this repository", null);
+				callback(new Error(ERR_CONTROLLER_ERROR, "Link id not from this repository"), null);
 			} else if(link.rendition != RENDITION_HIGHRES) {
-				callback("Cannot check low resolution in", null);
+				callback(new Error(ERR_ILLEGAL_STATE, "Cannot check low resolution in"), null);
 			} else if(_controller_getFileState(link.path) != null) {
-				callback(null, null);
-				//callback("File is being streamed", null);
+				callback(new Error(ERR_ILLEGAL_STATE, "File is being streamed"), null);
 			} else {
 				var docId     = module.host.document.id;
 				var filepath  = link.path;
@@ -2995,7 +3039,7 @@ function initAdobeCC(initCallback)
 	module.controller.showLink = function(linkId, callback) {
 		callback = callback || DEFAULT_CALLBACK;
 		if(!module.host.document) {
-			callback("No active document", null);
+			callback(new Error(ERR_CONTROLLER_ERROR, "No active document"), null);
 		} else {
 			var docId = module.host.document.id;
 			module.host.showLink(docId, linkId, (err) => {
@@ -3007,7 +3051,7 @@ function initAdobeCC(initCallback)
 	module.controller.linkNonHTTPAssets = function(folderId, callback) { 
 		callback = callback || DEFAULT_CALLBACK;
 		if(!module.host.document) {
-			callback("No active document", null);
+			callback(new Error(ERR_CONTROLLER_ERROR, "No active document"), null);
 		} else {
 			var docId     = module.host.document.id;
 			var prevstate = _controller_setDocumentState(docId, "relinking");
@@ -3077,7 +3121,7 @@ function initAdobeCC(initCallback)
 	module.controller.linkAsset = function(linkId, assetId, callback) { 
 		callback = callback || DEFAULT_CALLBACK;
 		if(!module.host.document) {
-			callback("No active document", null);
+			callback(new Error(ERR_CONTROLLER_ERROR, "No active document"), null);
 		} else {
 			var docId = module.host.document.id;
 			module.host.updateLink(docId, linkId, {
@@ -3099,7 +3143,7 @@ function initAdobeCC(initCallback)
 	module.controller.unlinkAsset = function(linkId, callback) { 
 		callback = callback || DEFAULT_CALLBACK;
 		if(!module.host.document) {
-			callback("No active document", null);
+			callback(new Error(ERR_CONTROLLER_ERROR, "No active document"), null);
 		} else {
 			var docId = module.host.document.id;
 			module.host.updateLink(docId, linkId, {
@@ -3118,7 +3162,7 @@ function initAdobeCC(initCallback)
 	module.controller.placeAsset = function(assetId, callback) {
 		callback = callback || DEFAULT_CALLBACK;
 		if(!module.host.document) {
-			callback("No active document", null);
+			callback(new Error(ERR_CONTROLLER_ERROR, "No active document"), null);
 		} else {
 			var docId = module.host.document.id;
 			module.controller.downloadAsset(assetId, {rendition: RENDITION_THUMBNAIL}, (err, info) => {
@@ -3168,7 +3212,7 @@ function initAdobeCC(initCallback)
 	module.controller.changeLinkRendition = function(linkId, rendition, callback) {
 		callback = callback || DEFAULT_CALLBACK;
 		if(!module.host.document) {
-			callback("No active document", null);
+			callback(new Error(ERR_CONTROLLER_ERROR, "No active document"), null);
 		} else {
 			var link  = null;
 			var links = module.host.document.links;
@@ -3213,9 +3257,9 @@ function initAdobeCC(initCallback)
 	module.controller.exportPDF = function(path, callback) {
 		callback = callback || DEFAULT_CALLBACK;
 		if(!module.host.document) {
-			callback("No active document", null);
+			callback(new Error(ERR_CONTROLLER_ERROR, "No active document"), null);
 		} else if(module.host.document.state != null) {
-			callback("Document cannot be exported right now", null);
+			callback(new Error(ERR_ILLEGAL_STATE, "Document cannot be exported right now"), null);
 		} else {
 			var docId     = module.host.document.id;
 			var prevstate = _controller_setDocumentState(docId, "exporting");
@@ -3241,6 +3285,11 @@ function initAdobeCC(initCallback)
 						} else {
 							module.repository.createAsset(path, file.name, _getFileData(file.path), (err, asset) => {
 								_controller_setDocumentState(docId, prevstate);
+								try {
+									window.cep_node.fs.unlinkSync(file.path);
+								} catch(e) {
+									console.error(e);
+								}
 								callback(err, asset);
 							});
 						}

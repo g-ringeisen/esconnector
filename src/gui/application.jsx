@@ -372,13 +372,11 @@
 					sr = -1;
 				}
 
-				if(sr == 0) {
-					if(l1.name)
-						sr = l1.name.localeCompare(l2.name);
-					else if(l1.id)
-						sr = l1.id - l2.id;
-				}
-
+				if(sr == 0 && l1.name)
+					sr = l1.name.localeCompare(l2.name);
+				if(sr == 0 && l1.id)
+					sr = l1.id - (l2.id || 0);
+				
 				return sr;
 			});
 
@@ -506,7 +504,7 @@
 					}
 
 					if(link.edited && link.outdated) {
-						synchIcon   = <AlertIcon className={classes.linkIcon} color={busy ? "disabled" : "secondary"}/>;
+						synchIcon   = <ToolTip title={cef.locale.get("fileconflict")}><AlertIcon className={classes.linkIcon} color={busy ? "disabled" : "secondary"}/></ToolTip>;
 						synchAction = null;
 					} else if(link.missing || link.outdated) {
 						synchIcon   = <CheckOutIcon className={classes.linkIcon} color={busy ? "disabled" : "secondary"}/>;
@@ -535,9 +533,9 @@
 						globalRenditionAction = renditionAction;
 
 					canToggleRendition = canToggleRendition && sameRepository && link.assetId != null;
-					canDownload        = canDownload && !busy && sameRepository && synchAction == "downloadLink";
-					canUpload          = canUpload && !busy && synchAction == "uploadLink";
-					canCheckIn         = canCheckIn && !busy && sameRepository && synchAction == "checkLinkIn";
+					canDownload        = canDownload && !busy && sameRepository && (link.missing || link.outdated);
+					canUpload          = canUpload && !busy && (!link.assetId && !link.missing);
+					canCheckIn         = canCheckIn && !busy && sameRepository && link.edited;
 					canUnlink          = canUnlink && link.assetId != null; 
 					canGoto            = canGoto && link.assetId != null && sameRepository;
 				}
@@ -1081,13 +1079,17 @@
 				var image    = null;
 				var subtitle = null;
 
-				if(asset.state)
+				if(asset.state) {
 					subtitle = cef.locale.get(asset.state);
-				else if(asset.type == "Document")
-					subtitle = readableType(asset.contentType) + (asset.contentLength != null ? ", " + readableSize(asset.contentLength) : "");
-				else if(asset.type == "DocumentVersion")
-					subtitle = cef.locale.get("Version") + " " + asset.version;
-
+				} else if(asset.type == "Folder") {
+					subtitle = null;
+				} else if(asset.type == "Document") {
+					if(asset.isVersion)
+						subtitle = cef.locale.get("Version") + " " + asset.version;
+					else
+						subtitle = readableType(asset.contentType) + (asset.contentLength != null ? ", " + readableSize(asset.contentLength) : "");
+				}
+	
 				if(asset.type == "Folder")
 					image = <FolderIcon className={classes.assetIcon} color="secondary"/>;
 				else if(asset.renditions && asset.renditions["cmis:thumbnail"])
@@ -1101,7 +1103,7 @@
 
 				tableRows.push( <TableRow key={asset.id} hover selected={asset.selected} 
 									onClick={(event) => handleRowClick(event, asset.id)} 
-									onDoubleClick={(event) => {if(asset.type != "DocumentVersion") handleRowDoubleClick(event, asset.id);}}>
+									onDoubleClick={(event) => {if(asset.hasChildren) handleRowDoubleClick(event, asset.id);}}>
 									<TableCell>{image}</TableCell>
 									<TableCell className={classes.filename}>
 										<Typography variant="body1">{asset.name}</Typography>
@@ -1312,7 +1314,7 @@
 								asset.versions.forEach((assetVersion) => {
 									list.push(Object.assign({}, asset, assetVersion, {
 										versions: null, 
-										type: "DocumentVersion", 
+										isVersion: true, 
 										parentId: asset.id
 									}));
 								});
@@ -1587,10 +1589,12 @@
 					});
 				} else if(action == "exportDocumentAsPDF") {
 					cef.controller.exportPDF(workingDir.id, (err, asset) => {
-						if(err)
-							showError(err);
-						else
+						if(err) {
+							if(err.code != 301)
+								showError(err);
+						} else {
 							showMessage(cef.locale.get("pdf_exported", asset.name));
+						}
 					});
 				} else if(action == "uploadAllLocalLinks") {
 					var doc = cef.controller.getActiveDocument();
@@ -1648,14 +1652,14 @@
 				} else if(action == "uploadLink") {
 					event.linkIds.forEach(linkId => {
 						cef.controller.uploadLink(linkId, workingDir.id, (err) => {
-							if(err)
+							if(err && (event.linkIds.length == 1 || err.code != 106))
 								showError(err);
 						});
 					});
 				} else if(action == "checkLinkIn") {
 					event.linkIds.forEach(linkId => {
 						cef.controller.checkLinkIn(linkId, (err) => {
-							if(err)
+							if(err && (event.linkIds.length == 1 || err.code != 106))
 								showError(err);
 						});
 					});
