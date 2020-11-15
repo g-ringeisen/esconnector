@@ -419,6 +419,12 @@ window.cef = (function() {
 				else
 					xhr.responseType = options.format || 'text';
 
+				if(options.anonymous) {
+					xhr.withCredentials = false;
+					xhr.anonymous       = true;
+					xhr.mozAnon         = true;
+				}
+
 				if(options.user)
 					xhr.setRequestHeader("Authorization", "Basic " + btoa(options.user));
 				xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
@@ -822,7 +828,7 @@ window.cef = (function() {
 
 			const tryToken = () => {
 				if(authorization.token) {
-					module.net.wget(this.baseUrl + "/login?token=" + authorization.token, {format: 'json'}, (err, data) => {
+					module.net.wget(this.baseUrl + "/login?token=" + authorization.token, {format: 'json', anonymous: true}, (err, data) => {
 						if(err || !data.token) {
 							tryBasic();
 						} else {
@@ -852,7 +858,7 @@ window.cef = (function() {
 				}
 			}
 
-			tryCookie();
+			tryToken();
 		}
 
 		doDisconnect(callback) {
