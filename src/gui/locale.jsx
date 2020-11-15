@@ -77,6 +77,7 @@ cef.locale.define("C", {
 	"relinking": "Relinking...",
 
 	// Alert messages
+	"document_has_local_links": "Your document contains some local or edited links, do you still want to upload it ?", 
 	"document_uploaded": "Document '{0}' successfully uploaded",
 	"document_checked_in": "Document '{0}' successfully checked in",
 	"pdf_exported": "PDF '{0}' successfully exported",
@@ -183,6 +184,7 @@ cef.locale.define("fr", {
 	"relinking": "Association...",
 
 	// Alert messages
+	"document_has_local_links": "Votre document contient des liens locaux et/ou modifiés, êtes vous sûr de vouloir le déposer sur le serveur ?", 
 	"document_uploaded": "Document '{0}' envoyé",
 	"document_checked_in": "Document '{0}' déposé",
 	"pdf_exported": "PDF '{0}' exporté",

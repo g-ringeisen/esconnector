@@ -125,7 +125,7 @@ if(!csif || csif.version != "0") {
 				"afterSave":             "documentAfterSave",
 				"afterSaveAs":           "documentAfterSaveAs",
 				"afterSaveACopy":        "documentAfterSaveACopy",
-				"afterUpdate":           "documentAfterUpdate"
+				"afterUpdate":           "documentAfterLinkUpdate"
 			};
 			return MAP[event.eventType] || event.eventType;
 		}
@@ -149,24 +149,29 @@ if(!csif || csif.version != "0") {
 
 		csif.dispatchApplicationEvent = function(event) {
 
-			var data = {
-				id: event.target.hasOwnProperty('id') ? event.target.id : null,
-				cls: event.target.reflect.name
-			};
-			
-			if(event.eventType == "afterSelectionChanged") {
-				var doc = csif.getActiveDocument();
-				data.id  = doc.id;
-				data.cls = doc.reflect.name;
-				data.selection = [];
-				if(doc != null) {
-					var links = _getSelectedLinks(doc);
-					for(var i=0; i<links.length; i++)
-						data.selection.push(links[i].id);
+			try {
+				var data = {
+					id: event.target.hasOwnProperty('id') ? event.target.id : null,
+					cls: event.target.reflect.name
+				};
+				
+				if(event.eventType == "afterSelectionChanged") {
+					var doc = csif.getActiveDocument();
+					data.selection = [];
+					if(doc != null) {
+						data.id = doc.id;
+						data.cls = doc.reflect.name;
+						var links = _getSelectedLinks(doc);
+						for(var i=0; i<links.length; i++)
+							data.selection.push(links[i].id);
+					}
 				}
-			}
 
-			csif.dispatchEvent(_getEventName(event), data);
+				csif.dispatchEvent(_getEventName(event), data);
+
+			} catch(e) {
+				csif.error(e);
+			}
 		}
 
 		csif.init = function() {
@@ -357,16 +362,14 @@ if(!csif || csif.version != "0") {
 					
 					if(file) {
 						if(file.fsName == _getLinkPath(link)) {
-							csif.info("Do Update");
 							link.update();
 						} else {
 							link.relink(file);					
 						}
 					} else {
-						csif.dispatchEvent("csif.app.event", {
-							eventType: Document.AFTER_LINKS_CHANGED,
-							sourceObject: "Document",
-							sourceId: docId
+						csif.dispatchEvent("documentAfterLinksChanged", {
+							id: docId,
+							cls: "Document"
 						});
 					}
 				}
@@ -491,7 +494,8 @@ if(!csif || csif.version != "0") {
 				csif.docstate = docstate;
 				if(placedItemsChanged) {
 					csif.dispatchEvent("documentAfterLinksChanged", {
-						id: csif.docstate.id
+						id: csif.docstate.id,
+						cls: "Document"
 					});
 				}
 
@@ -502,6 +506,7 @@ if(!csif || csif.version != "0") {
 							ids.push(i);
 					csif.dispatchEvent("documentAfterSelectionChanged", {
 						id: csif.docstate.id,
+						cls: "Document",
 						selection: ids
 					});
 				}
@@ -696,7 +701,8 @@ if(!csif || csif.version != "0") {
 					link.relink(file);
 				} else {
 					csif.dispatchEvent("documentAfterLinksChanged", {
-						id: docId
+						id: docId,
+						cls: "Document"
 					});
 				}
 			}

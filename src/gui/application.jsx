@@ -576,7 +576,7 @@
 			canUnlink          = canUnlink && selectionCount > 0;
 			canToggleRendition = canToggleRendition && selectionCount > 0;
 			canDownload        = canDownload && selectionCount > 0;
-			canUpload          = canUpload && selectionCount > 0;
+			canUpload          = canUpload && !props.readonly && selectionCount > 0;
 			canCheckIn         = canCheckIn && selectionCount > 0;
 			canGoto            = selectionCount == 1 && selectionProps.repository[0] == cef.controller.getRepositoryName();
 
