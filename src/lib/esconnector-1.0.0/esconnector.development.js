@@ -3125,7 +3125,7 @@ function initAdobeCC(initCallback)
 									module.host.updateLink(docId, linkId, {
 										assetId:    asset.id,
 										version:    null,
-										rendition:  (module.prefs.get("UseHighResolution", false) ? RENDITION_HIGHRES : RENDITION_PREVIEW),
+										rendition:  RENDITION_HIGHRES,
 										repository: module.controller.getRepositoryName(),
 										location:   asset.path,
 										contentId:  null
