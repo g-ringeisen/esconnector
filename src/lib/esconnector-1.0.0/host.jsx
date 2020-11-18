@@ -361,11 +361,11 @@ if(!csif || csif.version != "0") {
 					link.insertLabel("metadata", JSON.stringify(metadata));
 					
 					if(file) {
-						if(file.fsName == _getLinkPath(link)) {
-							link.update();
-						} else {
+						//if(file.fsName == _getLinkPath(link)) {
+						//	link.update();
+						//} else {
 							link.relink(file);					
-						}
+						//}
 					} else {
 						csif.dispatchEvent("documentAfterLinksChanged", {
 							id: docId,

@@ -45,6 +45,8 @@ cef.locale.define("C", {
 	"Folder": "Folder",
 	"Size": "Size",
 	"Account": "Account",
+	"Ok": "Ok",
+	"Cancel": "Cancel",
 
 	// Buttons and actions
 	"uploadDocument": "Upload document",
@@ -77,7 +79,7 @@ cef.locale.define("C", {
 	"relinking": "Relinking...",
 
 	// Alert messages
-	"document_has_local_links": "Your document contains some local or edited links, do you still want to upload it ?", 
+	"document_has_local_links": "Some assets in this document haven't been uploaded on a repository.\nIt is recommanded to upload all assets prior to the document.\n\nDo you still want to upload the document ?", 
 	"document_uploaded": "Document '{0}' successfully uploaded",
 	"document_checked_in": "Document '{0}' successfully checked in",
 	"pdf_exported": "PDF '{0}' successfully exported",
@@ -152,6 +154,8 @@ cef.locale.define("fr", {
 	"Folder": "Répertoire",
 	"Size": "Taille",
 	"Account": "Compte",
+	"Ok": "Ok",
+	"Cancel": "Annuler",
 
 	// Buttons and actions
 	"uploadDocument": "Envoyer le document",
@@ -184,7 +188,7 @@ cef.locale.define("fr", {
 	"relinking": "Association...",
 
 	// Alert messages
-	"document_has_local_links": "Votre document contient des liens locaux et/ou modifiés, êtes vous sûr de vouloir le déposer sur le serveur ?", 
+	"document_has_local_links": "Des fichiers liés au documents n'ont pas été enregistrés sur le serveur.\nIl est recommandé d'envoyer les fichiers liés sur le serveur avant le document.\n\nVoulez vous quand même envoyer ce document ?",
 	"document_uploaded": "Document '{0}' envoyé",
 	"document_checked_in": "Document '{0}' déposé",
 	"pdf_exported": "PDF '{0}' exporté",

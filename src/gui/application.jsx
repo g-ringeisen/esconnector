@@ -9,6 +9,14 @@
 		CircularProgress,
 		Container,
 		CssBaseline,
+
+		Button,
+		Dialog,
+		DialogTitle,
+		DialogContent,
+		DialogContentText,
+		DialogActions,
+
 		ExpansionPanel,
 		ExpansionPanelDetails,
 		ExpansionPanelSummary,
@@ -107,6 +115,41 @@
 				<span>{props.children}</span>
 			</Tooltip>);
 		}
+	})();
+
+	/**
+	 * PopupDialog
+	 */
+	const PopupDialog = (function() {
+
+
+		return function PopupDialog$0(props) {
+
+			var open    = props.message != null;
+			var onClose = props.onClose || ((value) => {});
+
+			var title   = props.title != null ? (<DialogTitle id="alert-dialog-title">{props.title}</DialogTitle>) : null;
+			var actions = null;
+
+			if(props.actions != null) {
+				var buttons = [];
+				for(const action of props.actions)
+					buttons.push((<Button key={buttons.length} onClick={() => onClose(action.value)} color={action.color || "primary"} autoFocus={action.selected || false}>{action.text}</Button>))
+				actions = (<DialogActions>{buttons}</DialogActions>);
+			}
+
+			return (<Dialog open={open}
+						onClose={() => onClose(null)}
+						aria-labelledby="alert-dialog-title"
+						aria-describedby="alert-dialog-description">
+					{title}
+					<DialogContent>
+						<DialogContentText id="alert-dialog-description">{props.message}</DialogContentText>
+					</DialogContent>
+					{actions}
+				</Dialog>);
+		}
+
 	})();
 
 	/**
@@ -1521,71 +1564,104 @@
 				return links;
 			}
 		
-			const messageStack = React.useRef([]);
+			const notificationStack = React.useRef([]);
 
 			const [documentInfo,   updateDocumentInfo]  = React.useState(cef.controller.getActiveDocument() || {});
 			const [documentLinks,  updateDocumentLinks] = React.useState(documentInfo.links);
 			const [currentPath,    setCurrentPath]      = React.useState(null);
 			const [currentView,    setCurrentView]      = React.useState('browser');
 			const [workingDir,     updateWorkingDir]    = React.useState(null);
-			const [currentMessage, setCurrentMessage]   = React.useState(null);
-			
+			const [notification,   setNotification]     = React.useState(null);
+			const [alertMessage,   setAlertMessage]     = React.useState(null);
+
 			function updateLinkSelection(selection) {
 				updateDocumentLinks([...applyLinkSelection(documentLinks, selection)]);
 			}
 
-			function pushMessage(type, text, delay) {
+			function pushNotification(type, text, delay) {
 				if(delay == null)
 					delay = 2000;
-				if(!pushMessage.key)
-					pushMessage.key = 1;
-				messageStack.current.push({
-					key:   pushMessage.key++,
+				if(!pushNotification.key)
+					pushNotification.key = 1;
+				notificationStack.current.push({
+					key:   pushNotification.key++,
 					type:  type,
 					text:  text,
 					delay: delay
 				});
-				setCurrentMessage(messageStack.current[0] || null);
+				setNotification(notificationStack.current[0] || null);
 			}
 
-			function showNextMessage() {
-				if(messageStack.current.length > 0) {
-					messageStack.current = messageStack.current.slice(1)
-					setCurrentMessage(messageStack.current[0] || null);
+			function showNextNotification() {
+				if(notificationStack.current.length > 0) {
+					notificationStack.current = notificationStack.current.slice(1)
+					setNotification(notificationStack.current[0] || null);
 				}
 			}
 
-			function showError(err) {
-				console.error(err);
-				pushMessage("error", err.toString(), 3000);
+			function showError(error) {
+				console.error(error);
+				pushNotification("error", error.toString(), 3000);
 			}
 
-			function showMessage(msg) {
-				console.info(msg);
-				pushMessage("info", msg.toString(), 3000);
+			function showInfo(message) {
+				console.info(message);
+				pushNotification("info", message.toString(), 3000);
+			}
+
+			function asyncConfirm(test, message, callback) {
+				if(test) {
+					setAlertMessage({
+						message: message,
+						actions: [
+							{text: cef.locale.get("Cancel"), value: false},
+							{text: cef.locale.get("Ok"),     value: true}
+						],
+						callback: callback
+					});
+				} else {
+					callback(true);
+				}
+			}
+
+			function asyncAlert(test, message, callback) {
+				if(test) {
+					setAlertMessage({
+						message: message,
+						actions: [
+							{text: cef.locale.get("Ok"), value: true}
+						],
+						callback: callback
+					});
+				} else {
+					callback(true);
+				}
 			}
 		
 			function handleAction(event, action) {
 				if(action == "uploadDocument") {
-					cef.controller.uploadDocument(workingDir.id, (err, asset) => {
-						if(err)
-							showError(err);
-						else
-							showMessage(cef.locale.get("document_uploaded", asset.name));
-					});
-				} else if(action == "checkAssetOut") {
-					event.assetIds.forEach(assetId => {
-						cef.controller.checkDocumentOut(assetId, (err) => {
-							if(err)
-								showError(err);
-						});
+					var doc = cef.controller.getActiveDocument();
+					asyncConfirm(doc.hasLocalLinks || doc.hasEditedLinks, cef.locale.get("document_has_local_links"), (confirmed) => {
+						if(confirmed) {
+							cef.controller.uploadDocument(workingDir.id, (err, asset) => {
+								if(err)
+									showError(err);
+								else
+									showInfo(cef.locale.get("document_uploaded", asset.name));
+							});	
+						}
 					});
 				} else if(action == "checkDocumentIn") {
-					cef.controller.checkDocumentIn((err, asset) => {
-						if(err)
-							showError(err);
-						else
-							showMessage(cef.locale.get("document_checked_in", asset.name));
+					var doc = cef.controller.getActiveDocument();
+					asyncConfirm(doc.hasLocalLinks || doc.hasEditedLinks, cef.locale.get("document_has_local_links"), (confirmed) => {
+						if(confirmed) {
+							cef.controller.checkDocumentIn((err, asset) => {
+								if(err)
+									showError(err);
+								else
+									showInfo(cef.locale.get("document_checked_in", asset.name));
+							});
+						}
 					});
 				} else if(action == "exportDocumentAsPDF") {
 					cef.controller.exportPDF(workingDir.id, (err, asset) => {
@@ -1593,7 +1669,7 @@
 							if(err.code != 301)
 								showError(err);
 						} else {
-							showMessage(cef.locale.get("pdf_exported", asset.name));
+							showInfo(cef.locale.get("pdf_exported", asset.name));
 						}
 					});
 				} else if(action == "uploadAllLocalLinks") {
@@ -1608,6 +1684,13 @@
 							}
 						}
 					}
+				} else if(action == "checkAssetOut") {
+					event.assetIds.forEach(assetId => {
+						cef.controller.checkDocumentOut(assetId, (err) => {
+							if(err)
+								showError(err);
+						});
+					});
 				} else if(action == "downloadAllMissingLinks") {
 					var repo = cef.controller.getRepositoryName();
 					var doc  = cef.controller.getActiveDocument();
@@ -1633,7 +1716,7 @@
 						if(err)
 							showError(err);
 						else
-							showMessage(cef.locale.get(count > 1 ? "{0}_assets_linked" : "{0}_asset_linked", count));
+							showInfo(cef.locale.get(count > 1 ? "{0}_assets_linked" : "{0}_asset_linked", count));
 					});
 				} else if(action == "unlinkAsset") {
 					event.linkIds.forEach(linkId => {
@@ -1778,17 +1861,25 @@
 										readonly={!workingDir || !workingDir.permissions.canCreateDocument}/>)
 						: (<PreferencePanel className={classes.viewport}/>)}
 
-					<Snackbar key={currentMessage ? currentMessage.key : "x"}
-							type={currentMessage ? currentMessage.type : "info"}
-							open={currentMessage != null}
-							autoHideDuration={currentMessage ? currentMessage.delay : 0} 
+					<Snackbar key={notification ? notification.key : "x"}
+							type={notification ? notification.type : "info"}
+							open={notification != null}
+							autoHideDuration={notification ? notification.delay : 0} 
 							anchorOrigin={{
 								vertical: 'bottom',
 								horizontal: 'center',
 							  }}
-							message={currentMessage ? currentMessage.text : ""}
-							action={<IconButton aria-label="close" color="inherit" onClick={() => showNextMessage()}><CloseIcon/></IconButton>}
-							onClose={() => showNextMessage(null)}/>
+							message={notification ? notification.text : ""}
+							action={<IconButton aria-label="close" color="inherit" onClick={() => showNextNotification()}><CloseIcon/></IconButton>}
+							onClose={() => showNextNotification(null)}/>
+
+					<PopupDialog message={alertMessage && alertMessage.message ? alertMessage.message : null}
+								 actions={alertMessage ? alertMessage.actions : null}
+								 onClose={(value) => {
+									 setAlertMessage(null);
+									 if(alertMessage && typeof alertMessage.callback == "function")
+									 	alertMessage.callback(value);
+								 }}/>
 
 				</Box>);
 		};

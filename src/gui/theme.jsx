@@ -191,6 +191,11 @@
 					margin: '0px'
 				}
 			}
+		},
+		MuiDialogContent: {
+			root: {
+				whiteSpace: 'pre-wrap'
+			}
 		}
 	};
 

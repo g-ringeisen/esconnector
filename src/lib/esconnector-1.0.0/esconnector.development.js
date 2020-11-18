@@ -302,14 +302,6 @@ window.cef = (function() {
 				return path;
 			},
 
-			alert: function(message) {
-				alert(message);
-			},
-
-			confirm: function(message) {
-				return confirm(message);
-			},
-
 			resizeImage: function(uri, width, height, callback) {
 				var image  = new Image();
 				image.onload = function() {
@@ -1507,13 +1499,22 @@ window.cef = (function() {
 				return null;
 			var doc = module.host.document;
 			doc.state = _documentStateManager.getState(doc.id) || _assetStateManager.getState(doc.assetId) || _fileStateManager.getState(doc.path);
+			doc.hasMissingLinks  = false;
+			doc.hasLocalLinks    = false;
+			doc.hasEditedLinks   = false;
+			doc.hasOutdatedLinks = false;
 			if(doc.links) {
 				for(var i=0; i<doc.links.length; i++) {
-					doc.links[i].state = _linkStateManager.getState([doc.id, doc.links[i].id]) || _assetStateManager.getState(doc.links[i].assetId) || _fileStateManager.getState(doc.links[i].path);
-					if(doc.links[i].assetId != null && module.repository != null && module.repository.name == doc.links[i].repository) {
-						doc.links[i].thumbnail = module.repository.getContentURL("T-" + doc.links[i].assetId).href;
+					var link = doc.links[i];
+					doc.hasMissingLinks  = doc.hasMissingLinks  || link.missing;
+					doc.hasEditedLinks   = doc.hasEditedLinks   || link.edited;
+					doc.hasOutdatedLinks = doc.hasOutdatedLinks || link.outdated;
+					doc.hasLocalLinks    = doc.hasLocalLinks    || (link.assetId == null && !link.missing);
+					link.state = _linkStateManager.getState([doc.id, link.id]) || _assetStateManager.getState(link.assetId) || _fileStateManager.getState(link.path);
+					if(link.assetId != null && module.repository != null && module.repository.name == link.repository) {
+						link.thumbnail = module.repository.getContentURL("T-" + link.assetId).href;
 					} else {
-						doc.links[i].thumbnail = null;
+						link.thumbnail = null;
 					}
 				}
 			}
@@ -2519,6 +2520,7 @@ function initAdobeCC(initCallback)
 			version:        asset.version,
 			location:       asset.path,
 			checkedOut:     asset.checkedOut,
+			checkOutId:     asset.checkOutId,
 			checkOutUser:   asset.checkOutUser,
 			lastestVersion: asset.lastestVersion
 		};
@@ -2796,11 +2798,11 @@ function initAdobeCC(initCallback)
 
 	module.controller.uploadDocument = function(path, callback) {
 		callback = callback || DEFAULT_CALLBACK;
-		if(module.host.document) {
-			if(_hasLocalLinks(module.host.document)) {
-				if(!module.util.confirm(module.locale.get("document_has_local_links")))
-					return;
-			}
+		if(!module.controller.isConnected())
+			callback(new Error(ERR_ILLEGAL_STATE, "Not connected to any repository"), null);
+		else if(!module.host.document)
+			callback(new Error(ERR_ILLEGAL_STATE, "No active document"), null);
+		else {
 			var docId    = module.host.document.id;
 			var docstate = _documentStateManager.setState(docId, "uploading");
 			_autoSave(module.host.document, (err, document) => {
@@ -3396,13 +3398,20 @@ function initAdobeCC(initCallback)
  */
 function initMSOffice(initCallback)
 {
-	var hostInfo = OSF._OfficeAppFactory.getHostInfo();
-	module.host.id = hostInfo.hostType;
-	module.host.name = hostInfo.hostType;
-	module.host.version = hostInfo.hostSpecificFileVersion;
-	module.host.type = "Office";
-	module.host.vendor = "Microsoft";
-	module.host.locale = hostInfo.hostLocale;
+	var _hostInfo = OSF._OfficeAppFactory.getHostInfo();
+
+	module.host = eventEmitter({
+		id: _hostInfo.hostType,
+		name: _hostInfo.hostType,
+		version: _hostInfo.hostSpecificFileVersion,
+		type: "Office",
+		vendor: "Microsoft",
+		userAgent: navigator.userAgent,
+		locale: _hostInfo.hostLocale,
+		platform: navigator.platform
+
+		// TODO
+	});
 
 
 	Office.onReady();
@@ -3418,29 +3427,26 @@ function initMSOffice(initCallback)
  * All functions and overloads for the extension to work in the Microsoft Office environement
  * 
  */
-function initEmulator()
+function initEmulator(initCallback)
 {
-	class EmulatedHostController
-	extends HostController
-	{
-		constructor() {
-			super();
-		}
-
-		init(callback) {
-			callback();
-		}
-
-		getPDFExportPresets(callback) {
-			callback(null, ["[Press Quality]"]);
-		}
-	}
-
 	module.extension.index = "./index.html";
 
-	module.controller = new EmulatedHostController();
+	module.host = eventEmitter({
+		id: "EMULATOR",
+		name: "EMULATOR",
+		version: "1.0",
+		type: "Emulator",
+		vendor: "DALIM SOFTWARE GmbH",
+		userAgent: navigator.userAgent,
+		locale: "en-US",
+		platform: navigator.platform
+
+		// TODO
+	});
 
 	console.log("GRN Emulated Extension Loaded");
+
+	initCallback();
 }
 
 
@@ -3508,7 +3514,7 @@ function initEmulator()
 	}
 	// Default Implementation
 	else {
-		initEmulator(initCallback);
+		initEmulator(hostInitCallback);
 	}
 
 	module.on("ready", () => {
