@@ -28,7 +28,7 @@
                 </Resources>
                 <UI>
                     <Type>Panel</Type>
-                    <Menu>DALIM ES</Menu>
+                    <Menu>DALIM ES CONNECTOR</Menu>
                     <Geometry>
                         <Size>
                             <Height>400</Height>

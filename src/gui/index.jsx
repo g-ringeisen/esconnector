@@ -47,7 +47,7 @@
 			const classes = useStyles();
 			
 			const [isConnecting, setConnecting] = useState(false);
-			const [serverList,   setServerList] = useState(cef.prefs.get("ServerHistory", ["Demo"]));
+			const [serverList,   setServerList] = useState(cef.prefs.get("ServerHistory", []));
 			const [serverName,   setServerName] = useState(serverList.length > 0 ? serverList[0] : "");
 			
 			function raiseError(err) {
@@ -121,6 +121,7 @@
 						onChange={(event) => setServerName(event.target.value)}
 						onKeyPress={(event) => { if (event.key === 'Enter') connect();}}
 						helperText={cef.locale.get("servername.helpertext")}
+						placeholder={cef.locale.get("servername.placeholder")}
 						InputProps={{
 							endAdornment: (<InputAdornment position="end">
 											<IconButton onClick={() => setServerName("")} disabled={isConnecting} edge="end" color="secondary">
@@ -246,6 +247,11 @@
 			card: {
 				width: '100%',
 				height: '340px',
+				backgroundColor: theme.palette.background.card,
+				backgroundImage: 'url(' + cef.locale.get("splashimage") + ')',
+    			backgroundSize: 'contain',
+    			backgroundPosition: 'top center',
+    			backgroundRepeat: 'no-repeat',
 				'& img': {
 					objectFit: 'cover',
 					float:'left',
@@ -256,6 +262,7 @@
 			overlay: {
 				padding: theme.spacing(2),
 				backgroundColor: theme.palette.background.overlay,
+				textTransform: 'uppercase',
 				display: 'block',
 				position: 'relative',
 				left: '0',
@@ -283,9 +290,7 @@
 		return function IndexGUI$0(props) {
 	
 			const classes = useStyles();
-
-			const defaultImage = "./gui/logincard.png";
-			const defaultTitle = "ES CONNECTOR";
+			const defaultTitle = cef.locale.get("appname");
 			
 			const [errorMessage, setErrorMessage] = React.useState(null);
 
@@ -296,7 +301,7 @@
 			return (
 				<Box className={classes.root}>
 					<Box className={classes.card}>
-						<img src={props.img || defaultImage}/>
+						&nbsp;
 					</Box>
 					<Container className={classes.overlay}>
 						<Typography variant="h6" color="textSecondary">{props.title || defaultTitle}</Typography>

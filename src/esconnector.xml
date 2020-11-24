@@ -6,8 +6,8 @@
   <DefaultLocale>en-US</DefaultLocale>
   <DisplayName DefaultValue="ES Connector"/>
   <Description DefaultValue="The official DALIM ES Connector"/>
-  <IconUrl DefaultValue="http://cc.ringeisen.fr/assets/icon-32.png"/>
-  <HighResolutionIconUrl DefaultValue="http://cc.ringeisen.fr/assets/icon-80.png"/>
+  <IconUrl DefaultValue="https://msaddin.ringeisen.fr/gui/icon-32.png"/>
+  <HighResolutionIconUrl DefaultValue="https://msaddin.ringeisen.fr/gui/icon-80.png"/>
   <SupportUrl DefaultValue="https://www.dalim.com"/>
   <AppDomains>
     <AppDomain>dalim.com</AppDomain>
@@ -16,7 +16,7 @@
     <Host Name="Document"/>
   </Hosts>
   <DefaultSettings>
-    <SourceLocation DefaultValue="https://cc.ringeisen.fr/webapp/index.html"/>
+    <SourceLocation DefaultValue="https://msaddin.ringeisen.fr/index.html"/>
   </DefaultSettings>
   <Permissions>ReadWriteDocument</Permissions>
   <VersionOverrides xmlns="http://schemas.microsoft.com/office/taskpaneappversionoverrides" xsi:type="VersionOverridesV1_0">
@@ -28,21 +28,21 @@
             <Description resid="GetStarted.Description"/>
             <LearnMoreUrl resid="GetStarted.LearnMoreUrl"/>
           </GetStarted>
-          <FunctionFile resid="Commands.Url"/>
+          <FunctionFile resid="DALIM.Url"/>
           <ExtensionPoint xsi:type="PrimaryCommandSurface">
             <OfficeTab id="TabHome">
-              <Group id="CommandsGroup">
-                <Label resid="CommandsGroup.Label"/>
+              <Group id="DALIMGroup">
+                <Label resid="DALIMGroup.Label"/>
                 <Icon>
                   <bt:Image size="16" resid="Icon.16x16"/>
                   <bt:Image size="32" resid="Icon.32x32"/>
                   <bt:Image size="80" resid="Icon.80x80"/>
                 </Icon>
-                <Control xsi:type="Button" id="TaskpaneButton">
-                  <Label resid="TaskpaneButton.Label"/>
+                <Control xsi:type="Button" id="ESConnectorButton">
+                  <Label resid="ESConnectorButton.Label"/>
                   <Supertip>
-                    <Title resid="TaskpaneButton.Label"/>
-                    <Description resid="TaskpaneButton.Tooltip"/>
+                    <Title resid="ESConnectorButton.Label"/>
+                    <Description resid="ESConnectorButton.Tooltip"/>
                   </Supertip>
                   <Icon>
                     <bt:Image size="16" resid="Icon.16x16"/>
@@ -51,7 +51,7 @@
                   </Icon>
                   <Action xsi:type="ShowTaskpane">
                     <TaskpaneId>ButtonId1</TaskpaneId>
-                    <SourceLocation resid="Taskpane.Url"/>
+                    <SourceLocation resid="ESConnector.Url"/>
                   </Action>
                 </Control>
               </Group>
@@ -62,23 +62,23 @@
     </Hosts>
     <Resources>
       <bt:Images>
-        <bt:Image id="Icon.16x16" DefaultValue="http://cc.ringeisen.fr/assets/icon-16.png"/>
-        <bt:Image id="Icon.32x32" DefaultValue="http://cc.ringeisen.fr/assets/icon-32.png"/>
-        <bt:Image id="Icon.80x80" DefaultValue="http://cc.ringeisen.fr/assets/icon-80.png"/>
+        <bt:Image id="Icon.16x16" DefaultValue="https://msaddin.ringeisen.fr/gui/icon-16.png"/>
+        <bt:Image id="Icon.32x32" DefaultValue="https://msaddin.ringeisen.fr/gui/icon-32.png"/>
+        <bt:Image id="Icon.80x80" DefaultValue="https://msaddin.ringeisen.fr/gui/icon-80.png"/>
       </bt:Images>
       <bt:Urls>
         <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="https://go.microsoft.com/fwlink/?LinkId=276812"/>
-        <bt:Url id="Commands.Url" DefaultValue="http://cc.ringeisen.fr/webapp/commands.html"/>
-        <bt:Url id="Taskpane.Url" DefaultValue="http://cc.ringeisen.fr/webapp/index.html"/>
+        <bt:Url id="DALIM.Url" DefaultValue="https://msaddin.ringeisen.fr/index.html"/>
+        <bt:Url id="ESConnector.Url" DefaultValue="https://msaddin.ringeisen.fr/index.html"/>
       </bt:Urls>
       <bt:ShortStrings>
-        <bt:String id="GetStarted.Title" DefaultValue="Get started with your sample add-in!"/>
-        <bt:String id="CommandsGroup.Label" DefaultValue="Commands Group"/>
-        <bt:String id="TaskpaneButton.Label" DefaultValue="Show Taskpane"/>
+        <bt:String id="GetStarted.Title" DefaultValue="Get started with your ES Connector !"/>
+        <bt:String id="DALIMGroup.Label" DefaultValue="DALIM SOFTWARE"/>
+        <bt:String id="ESConnectorButton.Label" DefaultValue="ES Connector"/>
       </bt:ShortStrings>
       <bt:LongStrings>
-        <bt:String id="GetStarted.Description" DefaultValue="Your sample add-in loaded succesfully. Go to the HOME tab and click the 'Show Taskpane' button to get started."/>
-        <bt:String id="TaskpaneButton.Tooltip" DefaultValue="Click to Show a Taskpane"/>
+        <bt:String id="GetStarted.Description" DefaultValue="The ES Connector loaded succesfully. Go to the HOME tab and click the 'ES Connector' button to get started."/>
+        <bt:String id="ESConnectorButton.Tooltip" DefaultValue="Click to open ES Connector"/>
       </bt:LongStrings>
     </Resources>
   </VersionOverrides>

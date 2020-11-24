@@ -895,6 +895,7 @@ window.cef = (function() {
 				}
 			}
 
+			//tryCookie();
 			tryToken();
 		}
 
@@ -3204,9 +3205,11 @@ function initAdobeCC(initCallback)
 		if(!module.host.document) {
 			callback(new Error(ERR_CONTROLLER_ERROR, "No active document"), null);
 		} else {
-			var docId = module.host.document.id;
+			var docId	   = module.host.document.id;
+			var assetState = _assetStateManager.setState(assetId, "downloading");
 			module.controller.downloadAsset(assetId, {rendition: RENDITION_THUMBNAIL}, (err, info) => {
 				if(err) {
+					assetState.unset();
 					callback(err, null);
 				} else {
 					module.host.placeLink(docId, info.path, {
@@ -3218,6 +3221,7 @@ function initAdobeCC(initCallback)
 						contentId:  info.contentId
 					}, (err, linkId) => {
 						if(err) {
+							assetState.unset();
 							callback(err, null);
 						} else {
 							// Callback first
@@ -3226,6 +3230,7 @@ function initAdobeCC(initCallback)
 							var linkstate = _linkStateManager.setState([docId, linkId], "downloading");
 							module.controller.downloadAsset(assetId, {rendition: (module.prefs.get("UseHighResolution", false) ? RENDITION_HIGHRES : RENDITION_PREVIEW)}, (err, info) => {
 								if(err) {
+									assetState.unset();
 									linkstate.unset();
 									console.error(err);
 								} else {
@@ -3236,6 +3241,7 @@ function initAdobeCC(initCallback)
 										rendition: info.rendition,
 										contentId: info.contentId,
 									}, (err) => {
+										assetState.unset();
 										linkstate.unset();
 										if(err)
 											console.error(err);

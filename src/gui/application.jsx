@@ -61,6 +61,15 @@
 		return cef.locale.get(value) || "-";
 	}
 
+	function _dateTransformFunction(value) {
+		if(!value)
+			return "-";
+		var date = new Date(value);
+		return date.toLocaleDateString(undefined, {
+			year: 'numeric', month: 'numeric', day: 'numeric'
+		}) + " " + date.toLocaleTimeString();
+	}
+
 	function readableSize(size) {
 		if(size == null)
 			return null;
@@ -951,8 +960,8 @@
 			},
 			assetIcon: {
 				paddingRight: theme.spacing(1),
-				maxWidth: '56px',
-				maxHeight: '42px',
+				maxWidth: '72px',
+				maxHeight: '54px',
 				objectFit: 'contain',
 				textAlign: 'center',
 				fontSize: 'xx-large'
@@ -1089,6 +1098,7 @@
 				path:       [],
 				locked:     [],
 				version:    [],
+				modified:   [],
 				state:      []
 			};
 
@@ -1111,6 +1121,7 @@
 					selectionProps.path.push(asset.path);
 					selectionProps.locked.push(asset.checkedOut);
 					selectionProps.version.push(asset.version);
+					selectionProps.modified.push(asset.modified || asset.created);
 					selectionProps.state.push(asset.state);
 
 					canCheckOut   = canCheckOut && asset.type == "Document" && cef.controller.isSupportedDocumentType(asset.contentType);
@@ -1119,38 +1130,47 @@
 					canUnlock     = canUnlock && asset.checkedOut;
 				}
 
-				var image    = null;
-				var subtitle = null;
-
-				if(asset.state) {
-					subtitle = cef.locale.get(asset.state);
-				} else if(asset.type == "Folder") {
-					subtitle = null;
+				var image     = null;
+				var subtitle  = null;
+				var subtitle2 = null;
+				var draggable = asset.type == "Document" && cef.controller.isSupportedLinkType(asset.contentType);
+				
+				if(asset.type == "Folder") {
+					// ...
 				} else if(asset.type == "Document") {
-					if(asset.isVersion)
-						subtitle = cef.locale.get("Version") + " " + asset.version;
-					else
-						subtitle = readableType(asset.contentType) + (asset.contentLength != null ? ", " + readableSize(asset.contentLength) : "");
+					if(asset.state) {
+						if(asset.isVersion) {
+							subtitle = cef.locale.get(asset.state);
+						} else {
+							subtitle  = asset.version != null ? cef.locale.get("Version") + " " + asset.version : null;
+							subtitle2 = cef.locale.get(asset.state);	
+						}
+					} else {
+						subtitle = asset.version != null ? cef.locale.get("Version") + " " + asset.version : null;
+						if(!asset.isVersion)
+							subtitle2 = readableType(asset.contentType) + (asset.contentLength != null ? ", " + readableSize(asset.contentLength) : "");
+					}
 				}
-	
+				
 				if(asset.type == "Folder")
 					image = <FolderIcon className={classes.assetIcon} color="secondary"/>;
 				else if(asset.renditions && asset.renditions["cmis:thumbnail"])
-					image = <img className={classes.assetIcon} src={asset.renditions["cmis:thumbnail"].contentURL} 
-								 onDragStart={(e) => {
-									 if(cef.controller.isSupportedLinkType(asset.contentType)) 
-										 dispatchAction(e, "placeAsset", asset.id)
-								}}></img>;
+					image = <img className={classes.assetIcon} src={asset.renditions["cmis:thumbnail"].contentURL} ></img>;
 				else
 					image = <NoPreviewIcon className={classes.assetIcon} color="secondary"/>;
 
-				tableRows.push( <TableRow key={asset.id} hover selected={asset.selected} 
+				tableRows.push( <TableRow key={asset.id} hover selected={asset.selected} draggable={draggable}
 									onClick={(event) => handleRowClick(event, asset.id)} 
-									onDoubleClick={(event) => {if(asset.hasChildren) handleRowDoubleClick(event, asset.id);}}>
+									onDoubleClick={(event) => {if(asset.hasChildren) handleRowDoubleClick(event, asset.id);}}
+									onDragStart={(e) => {
+										if(asset.type == "Document" && cef.controller.isSupportedLinkType(asset.contentType)) 
+											dispatchAction(e, "placeAsset", asset.id)
+								    }}>
 									<TableCell>{image}</TableCell>
 									<TableCell className={classes.filename}>
 										<Typography variant="body1">{asset.name}</Typography>
 										<Typography variant="subtitle1" color="secondary">{subtitle}</Typography>
+										<Typography variant="subtitle1" color="secondary">{subtitle2}</Typography>
 									</TableCell>
 									<TableCell>{asset.checkedOut ? (<LockIcon/>) : ""}</TableCell>
 								</TableRow>);
@@ -1245,6 +1265,12 @@
 							</Grid>
 							<Grid item xs={8}>
 								<Typography className={classes.value}>{_defaultTransformFunction(_defaultMergeFunction(selectionProps.version))}</Typography>
+							</Grid>
+							<Grid item xs={4}>
+								<Typography>{cef.locale.get("LastModified")} :</Typography>
+							</Grid>
+							<Grid item xs={8}>
+								<Typography className={classes.value}>{_dateTransformFunction(_defaultMergeFunction(selectionProps.modified))}</Typography>
 							</Grid>
 						</Grid>
 					</ExpansionPanelDetails>
@@ -1440,11 +1466,15 @@
 
 			function handleAssetChanged(assetId, props) {
 				for(var i=0; i<assetList.length; i++) {
-					if(assetList[i].id == assetId) {
+					if(assetList[i].id == assetId || (assetList[i].versionSerieId != null && assetList[i].versionSerieId == props.versionSerieId)) {
 						assetList[i] = Object.assign(assetList[i], props);
 						setAssetList([...assetList]);
-						break;
+						return;
 					}
+				}
+				// If it didn't update, may be refreesh the folder
+				if(props.parentId != null && workingDir.current != null && props.parentId == workingDir.current.id) {
+					refreshView();
 				}
 			}
 
@@ -1510,7 +1540,7 @@
 								onAssetAction={dispatchAssetAction}
 								onAssetDrag={handleAssetDrag}
 								enableDocumentAction={props.enableDocumentAction}
-								readonly={!(workingDir.current && workingDir.current.permissions.canCreateDocument)}/>)}
+								readonly={searchMode == true || !(workingDir.current && workingDir.current.permissions.canCreateDocument)}/>)}
 				</Box>
 				
 			</Box>);

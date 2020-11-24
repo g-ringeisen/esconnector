@@ -1,4 +1,8 @@
 cef.locale.define("C", {
+
+	"appname": "DALIM ES Connector",
+	"splashimage": "./gui/logincard.png",
+
 	"connect": "Connect",
 	"connecting": "Connecting...",
 	"signin": "Sign in",
@@ -7,8 +11,9 @@ cef.locale.define("C", {
 	"rememberme": "Remember me",
 	"username.label": "Account name",
 	"password.label": "Password",
-	"servername.label": "Server name",
-	"servername.helpertext": "Enter a repository name or choose one in the history below",
+	"servername.label": "Server URL",
+	"servername.helpertext": "Enter a repository URL or choose one in the history below",
+	"servername.placeholder": "ex: www.your-dalim-es.com",
 	"datasizes": ['bytes', 'Kb', 'Mb', 'Gb', 'Tb', 'Pb'],
 	
 	"selected": "selected",
@@ -35,9 +40,11 @@ cef.locale.define("C", {
 	"FileName": "File name",
 	"FilePath": "File path",
 	"FileSize": "File size",
+	"LastModified": "Last modified",
 	"DocumentLinks": "Document links",
 	"Preferences": "Preferences",
 	"Connection": "Connection",
+	"Version": "Version",
 	"Cache": "Cache",
 	"AutoSave": "Auto save on upload",
 	"UseHighResolution": "Use high resolution images",
@@ -107,6 +114,10 @@ cef.locale.define("en", {
 	
 });
 
+cef.locale.define("de", {
+	
+});
+
 cef.locale.define("fr", {
 	"connect": "Connecter",
 	"connecting": "Connexion...",
@@ -116,8 +127,8 @@ cef.locale.define("fr", {
 	"rememberme": "Rester connecté",
 	"username.label": "Identifiant",
 	"password.label": "Mot de passe",
-	"servername.label": "Nom du serveur",
-	"servername.helpertext": "Entrez un nom de serveur ou selectionnez en un ci-dessous",
+	"servername.label": "URL du serveur",
+	"servername.helpertext": "Entrez une URL de serveur ou selectionnez en un ci-dessous",
 	"datasizes": ['octets', 'Ko', 'Mo', 'Go', 'To', 'Po'],
 	
 	"selected": "sélectionné(s)",
@@ -144,6 +155,8 @@ cef.locale.define("fr", {
 	"FileName": "Fichier",
 	"FilePath": "Emplacement",
 	"FileSize": "Taille",
+	"Version": "Version",
+	"LastModified": "Modification",
 	"DocumentLinks": "Fichiers liés",
 	"Preferences": "Préférences",
 	"Connection": "Connexion",

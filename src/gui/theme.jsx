@@ -17,9 +17,10 @@
 			background: {
 				paper: '#535353',
 				default: '#535353',// '#444444',
-				overlay: 'rgba(68,68,68,0.5)',
 				shadow: 'rgba(0,0,0,0.2)',
-				highlight: 'rgba(255,255,255,0.2)'
+				highlight: 'rgba(255,255,255,0.2)',
+				overlay: 'rgba(68,68,68,0.5)',
+				card: 'rgba(0,0,0,1)'
 			},
 			text: {
 				primary: '#ffffff',
