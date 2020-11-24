@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+
+# BASEDIR: The folder where this script is located
+BASEDIR=`dirname $0`
+# EXTDIR: The location where to install the ES Connector
+EXTDIR="${HOME}/Library/Application Support/Adobe/CEP/extensions/com.dalim.esconnector"
+# ZIPFILE: The ZIP file containing the ES Connector
+ZIPFILE="${BASEDIR}/build/ESConnector.prd.zip"
+
+### Step 1 - Remove older version of the ES Connector
+
+if [ -L "${EXTDIR}" ]
+then
+	echo "DALIM ES Connector folder is a link."
+	echo "Assuming this is a developpement environement, nothing will be done."
+	exit 0
+elif [ -d "${EXTDIR}" ]
+then
+	echo "+ Removing older DALIM ES Connector"
+	rm -Rf "${EXTDIR}"
+elif [ -f "${EXTDIR}" ]
+then 
+	echo "+ Removing file in place of the DALIM ES Connector"
+	rm -f "${EXTDIR}"
+fi
+
+### Step 2 - Extract ZIPFILE in EXTDIR
+
+echo "+ Installing DALIM ES Connector"
+echo "-> ${EXTDIR}"
+
+mkdir -p "${EXTDIR}"
+unzip "${ZIPFILE}" -d "${EXTDIR}" 1> /dev/null
+
+### Step 3 - Enable Debug mode for Adoce CC 2019, 2020 and 2021
+
+defaults write "${HOME}/Library/Preferences/com.adobe.CSXS.9.plist"  PlayerDebugMode 1
+defaults write "${HOME}/Library/Preferences/com.adobe.CSXS.10.plist" PlayerDebugMode 1
+
+echo "+ DALIM ES Connector successfully installed !!!"
+exit 0
