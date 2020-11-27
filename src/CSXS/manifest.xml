@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<ExtensionManifest ExtensionBundleId="com.dalim.extensions.cc" ExtensionBundleVersion="1.0.0" Version="6.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<ExtensionManifest ExtensionBundleId="com.dalim.esconnector" ExtensionBundleVersion="1.0.0" Version="6.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <ExtensionList>
-        <Extension Id="com.dalim.extensions.cc.panel" Version="1.0.0"/>
+        <Extension Id="com.dalim.esconnector.panel" Version="1.0.0"/>
     </ExtensionList>
     <ExecutionEnvironment>
         <HostList>
@@ -15,7 +15,7 @@
         </LocaleList>
     </ExecutionEnvironment>
     <DispatchInfoList>
-        <Extension Id="com.dalim.extensions.cc.panel">
+        <Extension Id="com.dalim.esconnector.panel">
             <DispatchInfo>
                 <Resources>
                     <MainPath>./index.html</MainPath>
