@@ -11,7 +11,7 @@ src_dir="${root_dir}/src"
 build_dir="${root_dir}/build"
 output_dir="${build_dir}/output"
 
-pkgname="ESConnector"
+pkgname="DALIM_ES_Connector"
 
 ## BUILD LIB
 for libname in "csinterface-9.4.0" "material-ui-4.9.12" "react-16.13"
@@ -52,13 +52,17 @@ echo
 echo "Build Adobe Exchange Packages"
 
 cd "${output_dir}"
-zip -r "${build_dir}/${pkgname}.prd.zip" * > /dev/null
+zip -r "${build_dir}/${pkgname}_PRD.zip" * > /dev/null
 cd - > /dev/null
 
 cd "${src_dir}"
-zip -r "${build_dir}/${pkgname}.dev.zip" * > /dev/null
+zip -r "${build_dir}/${pkgname}_DEV.zip" * > /dev/null
 cd - > /dev/null
 
+echo 
+echo "Build WWTM 2020 Distribution Package"
+cd "${root_dir}"
+zip "${build_dir}/${pkgname}_WWTM2020.zip" "install_mac" "install_win.bat" "build/${pkgname}_PRD.zip" 
 
 echo 
 echo "Done"
