@@ -105,26 +105,6 @@
 							raiseError("Unable to connect repository");
 						}
 					});
-
-					/** OLD Fashion
-					cef.resolveRepository(servername, (err, repository) => {
-						if(err) {
-							setConnecting(false);
-							raiseError(err);
-						} else if(repository.clientUrl || repository.repositoryUrl) {
-							appendToHistory(servername);
-							cef.prefs.set("CurrentServer", servername);
-							if(repository.clientUrl) {
-								window.location.href = repository.clientUrl;
-							} else {
-								window.location.href = './index.html?hostType=' + encodeURIComponent(cef.host.type) + '&repoType=' + encodeURIComponent(repository.type) + '&repoUrl=' + encodeURIComponent(repository.repositoryUrl);
-							}
-						} else {
-							setConnecting(false);
-							raiseError("Unable to connect repository");
-						}
-					});
-					*/
 				}
 			}
 
