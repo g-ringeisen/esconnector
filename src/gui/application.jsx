@@ -1162,9 +1162,11 @@
 				tableRows.push( <TableRow key={asset.id} hover selected={asset.selected} draggable={draggable}
 									onClick={(event) => handleRowClick(event, asset.id)} 
 									onDoubleClick={(event) => {if(asset.hasChildren) handleRowDoubleClick(event, asset.id);}}
-									onDragStart={(e) => {
-										if(asset.type == "Document" && cef.controller.isSupportedLinkType(asset.contentType)) 
-											dispatchAction(e, "placeAsset", asset.id)
+									onDragStart={(event) => {
+										event.stopPropagation();
+										event.preventDefault();
+										if(asset.type == "Document" && cef.controller.isSupportedLinkType(asset.contentType))
+											dispatchAction(event, "placeAsset", asset.id)
 								    }}>
 									<TableCell>{image}</TableCell>
 									<TableCell className={classes.filename}>
@@ -1460,10 +1462,6 @@
 				browseTo(assetId);
 			}
 
-			function handleAssetDrag(event, assetId) {
-				dispatchAssetAction(event, "placeAsset", [assetId]);
-			}
-
 			function handleAssetChanged(assetId, props) {
 				for(var i=0; i<assetList.length; i++) {
 					if(assetList[i].id == assetId || (assetList[i].versionSerieId != null && assetList[i].versionSerieId == props.versionSerieId)) {
@@ -1538,7 +1536,6 @@
 								onDoubleClick={handleRowDoubleClick} 
 								onSelectionChange={(event, selection) => updateAssetSelection(selection)}
 								onAssetAction={dispatchAssetAction}
-								onAssetDrag={handleAssetDrag}
 								enableDocumentAction={props.enableDocumentAction}
 								readonly={searchMode == true || !(workingDir.current && workingDir.current.permissions.canCreateDocument)}/>)}
 				</Box>
