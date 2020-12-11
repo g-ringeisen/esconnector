@@ -11,6 +11,7 @@ Illustrator
   
  */
 
+
 window.cef = (function() {
 
 	_currentScript = window.document.currentScript;
@@ -807,24 +808,8 @@ window.cef = (function() {
 	class CMISRepository
 	extends Repository
 	{
-		static resolveURL(url, callback) {
-			module.net.wget(url + "/Esprit/browser", function(error, response, body) {
-				if(error) {
-					callback(null, null);
-				} else {
-					// Test response ...
-					callback(null, {
-						id: "uuid",
-						type: "ES5",
-						baseUrl: url + "/Esprit/browser",
-						repositoryUrl: url + "/Esprit/browser"
-					});
-				}
-			});
-		}
-
-		constructor(url) {
-			super(url);
+		constructor(baseUrl) {
+			super(baseUrl + "/Esprit/browser");
 			this.rootFolderId  = null;
 			this.rootFolderUrl = null;
 		}
@@ -1387,19 +1372,6 @@ window.cef = (function() {
 	class DemoRepository
 	extends Repository
 	{
-		static resolveURL(url, callback) {
-			if(url.toLowerCase() == "https://demo") {
-				callback(null, {
-					id: "uuid",
-					type: "DEMO",
-					baseUrl: url,
-					repositoryUrl: url
-				});
-			} else {
-				callback(null,null);
-			}
-		}
-
 		constructor(url) {
 			super(url);
 			this.rootFolderId = 1;
@@ -1435,26 +1407,71 @@ window.cef = (function() {
 
 	Repository.registerClass("DEMO", DemoRepository);
 	Repository.registerClass("ES5",  CMISRepository);
-	
-	module.resolveRepository = function(address, callback) {
 
+	/**
+	 * Client Resolver
+	 */
+
+	module.resolveClientURL = function(address, callback) {
+		
+		const _resolvers = [
+			// ESX Resolver
+			function(baseUrl, callback) {
+				// Coming soon ...
+				callback(null, null);
+			},
+			// ES OpenID Resolver
+			function(baseUrl, callback) {
+				var endpoint = baseUrl + "/ESConnector/index.html";
+				module.net.wget(endpoint, function(error, response, request) {
+					if(error) {
+						callback(error, null);
+					} else {
+						callback(null, endpoint + "?rtype=ES5");
+					}
+				});
+			},
+			// Simple ES Resolver
+			function(baseUrl, callback) {
+				var endpoint = baseUrl + "/Esprit/browser";
+				module.net.wget(endpoint, function(error, response, request) {
+					if(error) {
+						callback(error, null);
+					} else {
+						callback(null, './index.html?rtype=ES5&baseurl=' + encodeURIComponent(baseUrl));
+					}
+				});
+			}
+		];
+
+		var i1       = 0;
+		var i2       = 0;
 		var groups   = address.match(/(?:([a-z0-9]+):\/\/)?([^:\/]+)(?::([0-9]+))?(\/.*)?/i);
 		var proto    = groups[1];
-		var baseurls = (proto && proto.length > 0) ? [address] : ["http://" + address, "https://" + address];
+		var baseUrls = (proto && proto.length > 0) ? [address] : ["https://" + address, "http://" + address];
 		
-		var cb = function(err, info) {
-			if(err) {
-				callback(err);
-			} else if(info && info.type && info.repositoryUrl) {
-				callback(null, info);
-			} else if(baseurls.length > 0) {
-				Repository.resolveURL(baseurls.pop(), cb);
-			} else {
-				callback(new Error(ERR_REPOSITORY_ERROR, "Unable to connect repository at " + address), null);
-			}
-		};
-		Repository.resolveURL(baseurls.pop(), cb);
+		(function _resolve() {
 
+			if(i1 >= _resolvers.length) {
+				i1 = 0;
+				i2++;
+			}
+
+			if(i2 >= baseUrls.length) {
+				callback(new Error(ERR_REPOSITORY_ERROR, "Unable to connect repository at " + address), null);
+				return;
+			}
+
+			_resolvers[i1](baseUrls[i2], (error, endpoint) => {
+				if(endpoint != null) {
+					callback(null, endpoint);
+				} else {
+					i1++;
+					_resolve();
+				}
+			});
+
+		})();
 	}
 
 	/**
@@ -1978,9 +1995,10 @@ function initAdobeCC(initCallback)
 
 		if(options.user)
 			options.auth = options.user;
-		options.headers = Object.assign(options.headers, {
+		
+		options.headers = Object.assign({
 			'X-Requested-With' : 'NodeJS-HTTP' 
-		});
+		}, options.headers);
 
 		if(module.net.cookies) {
 			let cookies = [];
@@ -3524,11 +3542,10 @@ function initEmulator(initCallback)
 	}
 
 	module.on("ready", () => {
-		var repoType = queryParams.get("repoType");
-		var repoUrl  = queryParams.get("repoUrl");
-		if(repoType && repoUrl) {
-			module.repository = Repository.createRepository(repoType, repoUrl);
-		}
+		var rtype   = queryParams.get("rtype");
+		var baseurl = queryParams.get("baseurl") || window.location.origin;
+		if(rtype != null && baseurl != null && !baseurl.startsWith("file:/"))
+			module.repository = Repository.createRepository(rtype, baseurl);
 	});
 
 	return module;

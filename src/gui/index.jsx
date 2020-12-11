@@ -92,6 +92,21 @@
 				if(servername && servername.length > 0) {
 					setConnecting(true);
 
+					cef.resolveClientURL(servername, (err, endpoint) => {
+						if(err) {
+							setConnecting(false);
+							raiseError(err);
+						} else if(endpoint) {
+							appendToHistory(servername);
+							cef.prefs.set("CurrentServer", servername);
+							window.location.href = endpoint;
+						} else {
+							setConnecting(false);
+							raiseError("Unable to connect repository");
+						}
+					});
+
+					/** OLD Fashion
 					cef.resolveRepository(servername, (err, repository) => {
 						if(err) {
 							setConnecting(false);
@@ -109,6 +124,7 @@
 							raiseError("Unable to connect repository");
 						}
 					});
+					*/
 				}
 			}
 
