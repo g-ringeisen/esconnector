@@ -189,7 +189,7 @@
 
 			const [presets, updatePresets] = useState([]);
 
-			var cacheFolder = cef.controller.getCacheFolder();
+			var cacheFolder = cef.controller.getCacheFolder ? cef.controller.getCacheFolder() : null;
 
 			const [cacheSize, updateCacheSize] = useState(0);
 			const [clearing,  setClearing]     = useState(false);
@@ -197,22 +197,26 @@
 			const isMounted = useIsMounted();
 
 			useEffect(() => {
-				cef.controller.getPDFExportPresets((err, names) => {
-					if(err) {
-						// Silent Fail
-						console.error(err);
-					} else if(isMounted()) {
-						updatePresets(names);
-					}
-				});
-				cef.controller.getCacheSize((err, size) => {
-					if(err) {
-						// Silent Fail
-						console.error(err);
-					} else if(isMounted()) {
-						updateCacheSize(size);
-					}
-				});
+				if(cef.controller.getPDFExportPresets) {
+					cef.controller.getPDFExportPresets((err, names) => {
+						if(err) {
+							// Silent Fail
+							console.error(err);
+						} else if(isMounted()) {
+							updatePresets(names);
+						}
+					});
+				}
+				if(cef.controller.getCacheSize) {
+					cef.controller.getCacheSize((err, size) => {
+						if(err) {
+							// Silent Fail
+							console.error(err);
+						} else if(isMounted()) {
+							updateCacheSize(size);
+						}
+					});
+				}
 			});
 
 			function setPreference(name, value) {
@@ -273,6 +277,7 @@
 							control={<Switch checked={prefState["UseHighResolution"]} onChange={(e,v) => setPreference("UseHighResolution", v)} color="primary"/>}
 							label={cef.locale.get("UseHighResolution")}/>
 					</FormControl>
+
 					<TextField select label={cef.locale.get("PDFExportPreset")} value={presets.includes(prefState["PDFExportPreset"]) ? prefState["PDFExportPreset"] : "ASK"} onChange={(e) => setPreference("PDFExportPreset", e.target.value)}>
 						<MenuItem key="ASK" value="ASK">Ask...</MenuItem>
 						{presets.map((preset) => (<MenuItem key={preset} value={preset}>{preset}</MenuItem>))}
@@ -311,37 +316,39 @@
 					</TableBody>
 				</Table>
 
-				<Typography className={classes.h6} variant="h6">{cef.locale.get("Cache")}</Typography>
-				<Table size="small" padding="none">
-					<TableBody>
-						<TableRow>
-							<TableCell>
-								<Typography variant="body1">{cef.locale.get("Folder")}</Typography>
-							</TableCell>
-							<TableCell align="right">
-								<Typography variant="body1">{cacheFolder}</Typography>
-							</TableCell>
-							<TableCell align="right">
-								<IconButton disableRipple onClick={changeCacheFolder}>
-									<EditIcon fontSize="inherit"/>
-								</IconButton>
-							</TableCell>
-						</TableRow>
-						<TableRow>
-							<TableCell>
-								<Typography variant="body1">{cef.locale.get("Size")}</Typography>
-							</TableCell>
-							<TableCell align="right">
-								<Typography variant="body1">{readableSize(cacheSize)}</Typography>
-							</TableCell>
-							<TableCell align="right">
-								<IconButton disableRipple onClick={clearCache} disabled={clearing}>
-									<TrashIcon fontSize="inherit"/>
-								</IconButton>
-							</TableCell>
-						</TableRow>
-					</TableBody>
-				</Table>
+				{cacheFolder != null ? (<Typography className={classes.h6} variant="h6">{cef.locale.get("Cache")}</Typography>) : null}
+				{cacheFolder != null ? (
+					<Table size="small" padding="none">
+						<TableBody>
+							<TableRow>
+								<TableCell>
+									<Typography variant="body1">{cef.locale.get("Folder")}</Typography>
+								</TableCell>
+								<TableCell align="right">
+									<Typography variant="body1">{cacheFolder}</Typography>
+								</TableCell>
+								<TableCell align="right">
+									<IconButton disableRipple onClick={changeCacheFolder}>
+										<EditIcon fontSize="inherit"/>
+									</IconButton>
+								</TableCell>
+							</TableRow>
+							<TableRow>
+								<TableCell>
+									<Typography variant="body1">{cef.locale.get("Size")}</Typography>
+								</TableCell>
+								<TableCell align="right">
+									<Typography variant="body1">{readableSize(cacheSize)}</Typography>
+								</TableCell>
+								<TableCell align="right">
+									<IconButton disableRipple onClick={clearCache} disabled={clearing}>
+										<TrashIcon fontSize="inherit"/>
+									</IconButton>
+								</TableCell>
+							</TableRow>
+						</TableBody>
+					</Table>
+				) : null}
 
 			</Container>);
 		};

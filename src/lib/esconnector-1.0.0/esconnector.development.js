@@ -489,7 +489,7 @@ window.cef = (function() {
 
 				if(options.user)
 					xhr.setRequestHeader("Authorization", "Basic " + btoa(options.user));
-				xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+				//xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
 	
 				if(options.headers) {
 					for(let key in options.headers) {
@@ -832,22 +832,6 @@ window.cef = (function() {
 
 		doConnect(authorization, callback) {
 
-			const tryCookie = () => {
-				if(authorization.cookie) {
-					module.net.wget(this.baseUrl + "/login", {format: 'json', timeout: 5000}, (err, data) => {
-						if(err || !data.token) {
-							tryToken();
-						} else {
-							authorization.cookie = true;
-							authorization.token  = data.token;
-							callback(null, authorization);
-						}
-					});
-				} else {
-					tryToken();
-				}
-			}
-
 			const tryToken = () => {
 				if(authorization.token) {
 					module.net.wget(this.baseUrl + "/login?token=" + authorization.token, {format: 'json', anonymous: true}, (err, data) => {
@@ -876,11 +860,24 @@ window.cef = (function() {
 						}
 					});
 				} else {
-					callback(new Error(ERR_REPOSITORY_ERROR, "Unable to connect"), authorization);
+					trySimple();
 				}
 			}
 
-			//tryCookie();
+			const trySimple = () => {
+				module.net.wget(this.baseUrl + "/login", {format: 'json'}, (err, data) => {
+					if(err || !data.token) {
+						callback(err, null);
+					} else if(!data.token) {
+						callback(new Error(ERR_REPOSITORY_ERROR, "Unable to connect"), authorization);
+					} else {
+						authorization.cookie = true;
+						authorization.token  = data.token;
+						callback(null, authorization);
+					}
+				});
+			}
+
 			tryToken();
 		}
 
@@ -1697,11 +1694,13 @@ window.cef = (function() {
 
 		exportPDF: function(path, callback) { throw new Error(ERR_NOT_IMPLEMENTED, "Method 'exportPDF' is not implemented"); },
 
-		getCacheFolder: function() { throw new Error(ERR_NOT_IMPLEMENTED, "Method 'getCacheFolder' is not implemented"); },
+		//getCacheFolder: function() { throw new Error(ERR_NOT_IMPLEMENTED, "Method 'getCacheFolder' is not implemented"); },
 
-		getCacheSize: function(callback)  { throw new Error(ERR_NOT_IMPLEMENTED, "Method 'getCacheSize' is not implemented"); },
+		//getCacheSize: function(callback)  { throw new Error(ERR_NOT_IMPLEMENTED, "Method 'getCacheSize' is not implemented"); },
 
-		clearCache: function(callback)  { throw new Error(ERR_NOT_IMPLEMENTED, "Method 'clearCache' is not implemented"); },
+		//setCacheFolder: function(path) { throw new Error(ERR_NOT_IMPLEMENTED, "Method 'setCacheFolder' is not implemented"); },
+
+		//clearCache: function(callback)  { throw new Error(ERR_NOT_IMPLEMENTED, "Method 'clearCache' is not implemented"); },
 
 		isSupportedDocumentType: function(type)  { throw new Error(ERR_NOT_IMPLEMENTED, "Method 'isSupportedDocumentType' is not implemented"); },
 
@@ -1997,7 +1996,7 @@ function initAdobeCC(initCallback)
 			options.auth = options.user;
 		
 		options.headers = Object.assign({
-			'X-Requested-With' : 'NodeJS-HTTP' 
+		//	'X-Requested-With' : 'NodeJS-HTTP' 
 		}, options.headers);
 
 		if(module.net.cookies) {
@@ -3436,6 +3435,10 @@ function initMSOffice(initCallback)
 
 		// TODO
 	});
+
+	/**
+	 * Controller
+	 */
 
 
 	Office.onReady();
