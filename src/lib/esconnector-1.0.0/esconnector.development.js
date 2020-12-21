@@ -250,6 +250,10 @@ window.cef = (function() {
 
 		ready: false,
 
+		config: {
+
+		},
+
 		/**
 		 * A set of util functions
 		 */
@@ -625,12 +629,12 @@ window.cef = (function() {
 			classes.pop().resolveURL(url, cb);
 		}
 
-		constructor(url) {
+		constructor(baseUrl) {
 			super();
 
 			this.name          = null;
-			this.baseUrl       = url;
-			this.repositoryUrl = url;
+			this.baseUrl       = baseUrl;
+			this.repositoryUrl = null;
 			this.initialized   = false;
 			this.capabilities  = {
 				writeable: false,
@@ -639,7 +643,7 @@ window.cef = (function() {
 			};
 
 			// Set name
-			var matches = this.repositoryUrl.match(/([a-z0-9]+:\/\/)?([^:\/]+)(?::([0-9]+))?(\/.*)?/i);
+			var matches = this.baseUrl.match(/([a-z0-9]+:\/\/)?([^:\/]+)(?::([0-9]+))?(\/.*)?/i);
 			if(matches[2])
 				this.name = matches[2];
 			else
@@ -815,15 +819,39 @@ window.cef = (function() {
 		}
 
 		doInit(callback) {
-			module.net.wget(this.repositoryUrl, {format: 'json'}, (err, data) => {
+			module.net.wget(this.baseUrl, {format: 'json'}, (err, data) => {
 				if(err) {
 					callback(err, null);
+				} else if(data == null) {
+					callback(new Error(ERR_REPOSITORY_ERROR, "Not a valid repository"), null);
 				} else {
 					var repo = Object.values(data)[0];
+
+					if(repo.repositoryUrl) {
+						var _baseUrl = new URL(this.baseUrl);
+						var _repoUrl = new URL(repo.repositoryUrl);
+						var _rootUrl = new URL(repo.rootFolderUrl || repo.repositoryUrl);
+
+						if(_baseUrl.protocol != _repoUrl.protocol)
+							_repoUrl.protocol = _baseUrl.protocol;
+						if(_baseUrl.host != _repoUrl.host)
+							_repoUrl.host = _baseUrl.host;
+						if(_baseUrl.port != _repoUrl.port)
+							_repoUrl.port = _baseUrl.port;
+
+						if(_baseUrl.protocol != _rootUrl.protocol)
+							_rootUrl.protocol = _baseUrl.protocol;
+						if(_baseUrl.host != _rootUrl.host)
+							_rootUrl.host = _baseUrl.host;
+						if(_baseUrl.port != _rootUrl.port)
+							_rootUrl.port = _baseUrl.port;
+							
+						this.rootFolderUrl = _rootUrl.toString();
+						this.repositoryUrl = _repoUrl.toString();
+					}
+
 					this.repositoryId  = repo.repositoryId;
-					this.repositoryUrl = repo.repositoryUrl || this.repositoryUrl;
 					this.rootFolderId  = repo.rootFolderId;
-					this.rootFolderUrl = repo.rootFolderUrl;
 					this.initialized   = true;
 					callback(null, null);
 				}
@@ -1424,7 +1452,7 @@ window.cef = (function() {
 					if(error) {
 						callback(error, null);
 					} else {
-						callback(null, endpoint + "?rtype=ES5");
+						callback(null, endpoint + "?rtype=ES5&ts=" + Date.now());
 					}
 				});
 			},
@@ -1435,7 +1463,7 @@ window.cef = (function() {
 					if(error) {
 						callback(error, null);
 					} else {
-						callback(null, './index.html?rtype=ES5&baseurl=' + encodeURIComponent(baseUrl));
+						callback(null, './index.html?rtype=ES5&baseurl=' + encodeURIComponent(baseUrl) + "&ts=" + Date.now());
 					}
 				});
 			}
@@ -1651,12 +1679,12 @@ window.cef = (function() {
 				throw new Error(ERR_NOT_IMPLEMENTED, "Method 'newDocument' is not implemented");
 		},
 
-		getPDFExportPresets: function(callback) {
-			if(module.host.getPDFExportPresets)
-				return module.host.getPDFExportPresets(callback);
-			else
-				throw new Error(ERR_NOT_IMPLEMENTED, "Method 'getPDFExportPresets' is not implemented");
-		},
+		//getPDFExportPresets: function(callback) {
+		//	if(module.host.getPDFExportPresets)
+		//		return module.host.getPDFExportPresets(callback);
+		//	else
+		//		callback(null, []);
+		//},
 
 		getIndexURL: function() {
 			throw new Error(ERR_NOT_IMPLEMENTED, "Method 'getIndexURL' is not implemented");
@@ -1999,12 +2027,21 @@ function initAdobeCC(initCallback)
 		//	'X-Requested-With' : 'NodeJS-HTTP' 
 		}, options.headers);
 
+/*		
 		if(module.net.cookies) {
 			let cookies = [];
 			for (let key in module.net.cookies)
 				cookies.push(key + "=" + module.net.cookies[key]);
 			if(cookies.length > 0)
 				options.headers["Cookie"] = cookies;
+		}
+*/
+		if(document.cookie && document.cookie.length > 0) {
+			let cookies = [];
+			document.cookie.split("; ").forEach((cookie) => {
+				cookies.push(cookie);
+			});
+			options.headers["Cookie"] = cookies;
 		}
 
 		var request = (options.protocol == "https:" ? cep_node.https : cep_node.http).get(options, (response) => {
@@ -2017,11 +2054,8 @@ function initAdobeCC(initCallback)
 				err = new Error(response.statusCode, response.statusMessage);
 
 			if(response.headers['set-cookie']) {
-				if(!module.net.cookies)
-					module.net.cookies = {};
 				response.headers['set-cookie'].forEach(cookie => {
-					var matches = cookie.match(/^([a-zA-Z0-9]+)=([^;]+)(;.*)?$/);
-					module.net.cookies[matches[1]] = matches[2];
+					document.cookie = cookie;
 				});
 			}
 				
@@ -2573,6 +2607,13 @@ function initAdobeCC(initCallback)
 		}
 		return false;
 	};
+
+	module.controller.getPDFExportPresets = function(callback) {
+		if(module.host.getPDFExportPresets)
+			return module.host.getPDFExportPresets(callback);
+		else
+			callback(null, []);
+	}
 
 	module.controller.getCacheFolder = function() {
 		return "" + cef.prefs.get("WorkingDir", cef.util.userDocumentsFolder() + "/" + DEFAULT_DATA_FOLDER);
@@ -3483,73 +3524,54 @@ function initEmulator(initCallback)
  * Initialize Module
  * 
  */
-	var hostInitialized = false;
-	var documentLoaded  = false;
-	var guiLoaded       = false;
-	var queryParams     = new URLSearchParams(document.location.search);
-
-	function moduleInitCallback() {
-		if(hostInitialized && documentLoaded && guiLoaded && !module.ready) {
-			module.ready = true;
-			module.emit("ready", this);
-		}
-	}
-
-	function hostInitCallback(err) {
-		if(err) {
-			console.error(err);
-		} else {
-			hostInitialized = true;
-			moduleInitCallback();
-		}
-	}
-
-	window.addEventListener("load", () => { 
-		documentLoaded = true;
-		moduleInitCallback();
-	});
-
-	// Waitr for Babel to process JSX
-	if(USE_BABEL) {
-		module.addListener("babelLoaded", () => { 
-			guiLoaded = true;
-			moduleInitCallback();
-		});
-	} else {
-		guiLoaded = true;
-	}
 	
-	// Load Adobe CC Implementation
-	if(window.__adobe_cep__ || queryParams.get("hostType") == "AdobeCC") {
-		loadLibraries(["../csinterface-9.4.0/csinterface.js"], (err) => {
-			if(err) {
-				hostInitCallback(err);
-			} else {
-				initAdobeCC(hostInitCallback);
-			}
-		});
-	}
-	// Load Microsoft Office Implementation
-	else if(queryParams.has("_host_Info") || queryParams.get("hostType") == "Office") {
-		loadLibraries(["https://appsforoffice.microsoft.com/lib/1.1/hosted/office.js"], (err) => {
-			if(err) {
-				hostInitCallback(err);
-			} else {
-				initMSOffice(hostInitCallback);
-			}
-		});
-	}
-	// Default Implementation
-	else {
-		initEmulator(hostInitCallback);
-	}
+	module.init = function(options, callback) {
+		if(!callback && typeof options === 'function') {
+			callback = options;
+			options = {};
+		};
 
-	module.on("ready", () => {
-		var rtype   = queryParams.get("rtype");
-		var baseurl = queryParams.get("baseurl") || window.location.origin;
-		if(rtype != null && baseurl != null && !baseurl.startsWith("file:/"))
-			module.repository = Repository.createRepository(rtype, baseurl);
-	});
+		Object.assign(module.config, options);
+
+		var rtype   = module.config.repositoryType    || "ES5"; // Use ES5+ repository by default
+		var baseurl = module.config.repositoryBaseUrl || window.location.origin; // Use current origin as a base URL
+		var params  = new URLSearchParams(location.search);
+
+		const moduleInitCallback = function(err) {
+			if(err) {
+				callback(err);
+			} else {
+				if(rtype != null && baseurl != null && !baseurl.startsWith("file:/"))
+					module.repository = Repository.createRepository(rtype, baseurl);
+				callback(null);
+			}
+		};
+
+		// Load Adobe CC Implementation
+		if(window.__adobe_cep__) {
+			loadLibraries(["../csinterface-9.4.0/csinterface.js"], (err) => {
+				if(err) {
+					moduleInitCallback(err);
+				} else {
+					initAdobeCC(moduleInitCallback);
+				}
+			});
+		}
+		// Load Microsoft Office Implementation
+		else if(params.has("_host_Info")) {
+			loadLibraries(["https://appsforoffice.microsoft.com/lib/1.1/hosted/office.js"], (err) => {
+				if(err) {
+					moduleInitCallback(err);
+				} else {
+					initMSOffice(moduleInitCallback);
+				}
+			});
+		}
+		// Default Implementation
+		else {
+			initEmulator(moduleInitCallback);
+		}
+	};
 
 	return module;
 

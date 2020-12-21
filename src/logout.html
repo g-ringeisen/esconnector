@@ -1,0 +1,11 @@
+<html>
+	<script>
+		function redirect() {
+			var searchParams = new URLSearchParams(location.search);
+			var redirectUri  = searchParams.get("redirect_uri");
+			location.href = redirectUri != null && redirectUri != "" ? redirectUri : "./index.html?ts=" + Date.now();
+		}
+	</script>
+	<body onload="redirect();">
+	</body>
+</html>

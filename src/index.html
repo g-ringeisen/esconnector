@@ -32,42 +32,38 @@
 		<script type="text/babel" src="./gui/index.jsx"></script>
 		<!-- Translations -->
 		<script type="text/babel" src="./gui/locale.jsx"></script>
-		<!-- Emit babelLoaded -->
-		<script type="text/babel">cef.emit("babelLoaded");</script>
-
 		
-		<script>
-			window.addEventListener("dragenter", function(e) {
-				e.preventDefault();
-				e.dataTransfer.effectAllowed = "none";
-				e.dataTransfer.dropEffect = "none";
-			}, false);
+		<!-- Init -->
+		<script type="text/babel">
+			function initESConnector() {
 
-			window.addEventListener("dragover", function(e) {
-				e.preventDefault();
-				e.dataTransfer.effectAllowed = "none";
-				e.dataTransfer.dropEffect = "none";
-			});
+				var options = {};
+				var params  = new URLSearchParams(document.location.search);
 
-			window.addEventListener("drop", function(e) {
-				e.preventDefault();
-				e.dataTransfer.effectAllowed = "none";
-				e.dataTransfer.dropEffect = "none";
-			});
+				if(params.has("rtype"))
+					options.repositoryType = params.get("rtype");
+				if(params.has("baseurl"))
+					options.repositoryBaseUrl = params.get("baseurl");
 
-			window.cef.on("ready", function() {
-				if(window.cef.repository) {
-					window.cef.repository.connect(function() {
-						if(window.cef.repository.connected) {
-							ReactDOM.render(React.createElement(ApplicationGUI), document.getElementById('d-container'));
-						} else {
-							ReactDOM.render(React.createElement(IndexGUI), document.getElementById('d-container'));
-						}
-					});
-				} else {
-					ReactDOM.render(React.createElement(IndexGUI), document.getElementById('d-container'));
-				}
-			});
+				window.cef.init(options, function() {
+					if(window.cef.repository) {
+						window.cef.repository.connect(function() {
+							if(window.cef.repository.connected) {
+								ReactDOM.render(React.createElement(ApplicationGUI), document.getElementById('d-container'));
+							} else {
+								ReactDOM.render(React.createElement(IndexGUI), document.getElementById('d-container'));
+							}
+						});
+					} else {
+						ReactDOM.render(React.createElement(IndexGUI), document.getElementById('d-container'));
+					}
+				});
+			};
+
+			if(window.document.readyState === 'complete')
+				initESConnector();
+			else
+				window.document.onload = initESConnector;
 		</script>
 
 	</head>

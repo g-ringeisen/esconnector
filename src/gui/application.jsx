@@ -45,6 +45,27 @@
 	} = MaterialUI;
 
 	/**
+	 * Tune default behaviors
+	 */
+	window.addEventListener("dragenter", function(e) {
+		e.preventDefault();
+		e.dataTransfer.effectAllowed = "none";
+		e.dataTransfer.dropEffect = "none";
+	}, false);
+	
+	window.addEventListener("dragover", function(e) {
+		e.preventDefault();
+		e.dataTransfer.effectAllowed = "none";
+		e.dataTransfer.dropEffect = "none";
+	});
+	
+	window.addEventListener("drop", function(e) {
+		e.preventDefault();
+		e.dataTransfer.effectAllowed = "none";
+		e.dataTransfer.dropEffect = "none";
+	});
+
+	/**
 	 * Util Functions
 	 */
 	function _defaultMergeFunction(values) {
@@ -234,7 +255,10 @@
 				cef.repository.signOut((err) => {
 					if(err)
 						console.warn("SIGNOUT", err);
-					window.location.reload();
+
+					var redirectUri = new URL(location.href);
+					redirectUri.searchParams.set("ts", Date.now());
+					window.location.href = "./logout.html?redirect_uri=" + encodeURIComponent(redirectUri.href);
 				});
 			};
 
@@ -308,7 +332,7 @@
 								<Typography variant="body1">{cef.controller.getAccountName() || "-"}</Typography>
 							</TableCell>
 							<TableCell align="right">
-								<IconButton disabled={cef.controller.getAccountName() == null} disableRipple onClick={signOutAccount}>
+								<IconButton disableRipple onClick={signOutAccount}>
 									<SignOutIcon fontSize="inherit"/>
 								</IconButton>
 							</TableCell>

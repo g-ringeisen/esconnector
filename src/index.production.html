@@ -21,39 +21,38 @@
 		
 		<!-- Login Page App-->
 		<script type="text/javascript" src="./gui/gui.min.js"></script>
+		
+		<!-- Init -->
+		<script type="text/javascript">
 
-		<script>
-			window.addEventListener("dragenter", function(e) {
-				e.preventDefault();
-				e.dataTransfer.effectAllowed = "none";
-				e.dataTransfer.dropEffect = "none";
-			}, false);
+			function initESConnector() {
+				var options = {};
+				var params  = new URLSearchParams(document.location.search);
+				
+				if(params.has("rtype"))
+					options.repositoryType = params.get("rtype");
+				if(params.has("baseurl"))
+					options.repositoryBaseUrl = params.get("baseurl");
 
-			window.addEventListener("dragover", function(e) {
-				e.preventDefault();
-				e.dataTransfer.effectAllowed = "none";
-				e.dataTransfer.dropEffect = "none";
-			});
+				window.cef.init(options, function() {
+					if(window.cef.repository) {
+						window.cef.repository.connect(function() {
+							if(window.cef.repository.connected) {
+								ReactDOM.render(React.createElement(ApplicationGUI), document.getElementById('d-container'));
+							} else {
+								ReactDOM.render(React.createElement(IndexGUI), document.getElementById('d-container'));
+							}
+						});
+					} else {
+						ReactDOM.render(React.createElement(IndexGUI), document.getElementById('d-container'));
+					}
+				});
+			};
 
-			window.addEventListener("drop", function(e) {
-				e.preventDefault();
-				e.dataTransfer.effectAllowed = "none";
-				e.dataTransfer.dropEffect = "none";
-			});
-			
-			window.cef.on("ready", function() {
-				if(window.cef.repository) {
-					window.cef.repository.connect(function() {
-						if(window.cef.repository.connected) {
-							ReactDOM.render(React.createElement(ApplicationGUI), document.getElementById('d-container'));
-						} else {
-							ReactDOM.render(React.createElement(IndexGUI), document.getElementById('d-container'));
-						}
-					});
-				} else {
-					ReactDOM.render(React.createElement(IndexGUI), document.getElementById('d-container'));
-				}
-			});
+			if(window.document.readyState === 'complete')
+				initESConnector();
+			else
+				window.document.onload = initESConnector;
 		</script>
 
 	</head>
