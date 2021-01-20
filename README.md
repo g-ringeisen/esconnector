@@ -91,7 +91,8 @@ Then add a new entry `PlayerDebugMode` of type `string` with the value of `1`.
 ...
 #### `cef.controller.getPDFExportPresets(callback)`
 * `callback <Function(err, presets)>`
-	* `presets <String[]>` -  A list of preset names
+	* `err` `Object` -  A list of preset names
+	* `presets` `<String[]>` -  A list of preset names
 
 Retrieves the list of available PDF presets in the host application.
 
