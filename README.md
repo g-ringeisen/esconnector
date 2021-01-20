@@ -90,7 +90,13 @@ Then add a new entry `PlayerDebugMode` of type `string` with the value of `1`.
 #### `cef.controller.newDocument(callback)`
 ...
 #### `cef.controller.getPDFExportPresets(callback)`
-...
+* `callback <Function(err, presets)>`
+	* `presets <String[]>` -  A list of preset names
+
+Retrieves the list of available PDF presets in the host application.
+
+*(Adobe Suite Only)*
+
 #### `cef.controller.updateDocumentMetadata(callback)`
 ...
 #### `cef.controller.downloadDocument(assetId, callback)`
@@ -124,9 +130,18 @@ Then add a new entry `PlayerDebugMode` of type `string` with the value of `1`.
 #### `cef.controller.exportPDF(path, callback)`
 ...
 #### `cef.controller.getCacheFolder()`
-...
+Returns the local path to the cache folder.
+
+*(Adobe Suite Only)*
+
 #### `cef.controller.getCacheSize(callback)`
-...
+* `callback` {Function(err, size)}`
+	* `presets` {String[]} -  The size of the folder in bytes
+
+Computes the total size of the cache folder.
+
+*(Adobe Suite Only)*
+
 #### `cef.controller.clearCache(callback)`
 ...
 #### `cef.controller.isSupportedDocumentType(type)`
