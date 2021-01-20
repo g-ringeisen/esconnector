@@ -136,7 +136,8 @@ Returns the local path to the cache folder.
 
 #### `cef.controller.getCacheSize(callback)`
 * `callback` {Function(err, size)}`
-	* `presets` {String[]} -  The size of the folder in bytes
+	* `err` {object} - the error object if one occurs
+	* `presets` {string} -  The size of the folder in bytes
 
 Computes the total size of the cache folder.
 
