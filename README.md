@@ -135,9 +135,9 @@ Returns the local path to the cache folder.
 *(Adobe Suite Only)*
 
 #### `cef.controller.getCacheSize(callback)`
-* `callback` {Function(err, size)}`
-	* `err` {object} - the error object if one occurs
-	* `presets` {string} -  The size of the folder in bytes
+* `callback` `Function(err, size)`
+	* `err: object` - the error object if one occurs
+	* `presets: string` -  The size of the folder in bytes
 
 Computes the total size of the cache folder.
 
