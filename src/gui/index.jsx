@@ -301,6 +301,10 @@
 					</Box>
 					<Container className={classes.overlay}>
 						<Typography variant="h6" color="textSecondary">{props.title || defaultTitle}</Typography>
+						<br/>
+						<Typography variant="caption" color="textSecondary">{cef.locale.get("Version") + ": " + cef.info.version + " (Build " + cef.info.build + ")"}</Typography>
+						<br/>
+						<Typography variant="caption" color="textSecondary">{cef.info.copyright}</Typography>
 					</Container>
 					<Container className={classes.content}>
 						{!cef.repository ? <ConnectPanel onError={showError}/> : <SignInPanel onError={showError}/>}

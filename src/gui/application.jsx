@@ -374,6 +374,29 @@
 					</Table>
 				) : null}
 
+				<Typography className={classes.h6} variant="h6">{cef.locale.get("About")}</Typography>
+				<Table size="small" padding="none">
+					<TableBody>
+						<TableRow>
+							<TableCell>
+								<Typography variant="body1">{cef.locale.get("Version")}</Typography>
+							</TableCell>
+							<TableCell align="right">
+								<Typography variant="body1">{cef.info.version} (Build {cef.info.build})</Typography>
+							</TableCell>
+						</TableRow>
+						<TableRow>
+							<TableCell>
+								<Typography variant="body1">{cef.locale.get("Copyright")}</Typography>
+							</TableCell>
+							<TableCell align="right">
+								<ToolTip title={cef.locale.get("Author") + ": " + cef.info.author}>
+									<Typography variant="body1">{cef.info.copyright}</Typography>
+								</ToolTip>
+							</TableCell>
+						</TableRow>
+					</TableBody>
+				</Table>
 			</Container>);
 		};
 	})();

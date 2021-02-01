@@ -14,11 +14,18 @@ Illustrator
 
 window.cef = (function() {
 
+
 	_currentScript = window.document.currentScript;
 
 	/**
 	 * CONST
 	 */
+	const CEF_VERSION           = "1.0"
+	const CEF_BUILD             = "210201"
+	const CEF_CREATOR           = "Gautier RINGEISEN"
+	const CEF_CREATORMAIL       = "gautier.ringeisen@gmail.com"
+	const CEF_COPYRIGHT         = "Copyright \u00A9 2020, DALIM SOFTARE GmbH"
+
 	const ERR_UNKNOWN           = 100;
 	const ERR_NOT_IMPLEMENTED   = 101;
 	const ERR_NOT_SUPPORTED     = 102;
@@ -252,6 +259,14 @@ window.cef = (function() {
 
 		config: {
 
+		},
+
+		info: {
+			version: CEF_VERSION,
+			build: CEF_BUILD,
+			author: CEF_CREATOR,
+			contact: CEF_CREATORMAIL,
+			copyright: CEF_COPYRIGHT
 		},
 
 		/**
