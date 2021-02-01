@@ -5,7 +5,7 @@ BASEDIR=`dirname $0`
 # EXTDIR: The location where to install the ES Connector
 EXTDIR="${HOME}/Library/Application Support/Adobe/CEP/extensions/com.dalim.esconnector"
 # ZIPFILE: The ZIP file containing the ES Connector
-ZIPFILE="${BASEDIR}/build/DALIM_ES_Connector_PRD.zip"
+ZIPFILE="${BASEDIR}/build/ESConnector_prd.zip"
 
 ### Step 1 - Remove older version of the ES Connector
 

@@ -11,7 +11,7 @@ IF DEFINED APPDATA (
 	SET EXTDIR=%USERPROFILE%\AppData\Roaming\Adobe\CEP\extensions\com.dalim.esconnector
 )
 :: ZIPFILE: The ZIP file containing the ES Connector
-SET ZIPFILE=%BASEDIR%\build\DALIM_ES_Connector_PRD.zip
+SET ZIPFILE=%BASEDIR%\build\ESConnector_prd.zip
 
 :::: Step 1 - Remove older version of the ES Connector
 

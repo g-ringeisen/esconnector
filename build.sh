@@ -11,7 +11,7 @@ src_dir="${root_dir}/src"
 build_dir="${root_dir}/build"
 output_dir="${build_dir}/output"
 
-pkgname="DALIM_ES_Connector"
+pkgname="ESConnector"
 
 ## BUILD LIB
 for libname in "csinterface-9.4.0" "material-ui-4.9.12" "react-16.13"
@@ -41,28 +41,30 @@ for filename in `ls -1 "${src_dir}/gui" | grep -v '.development.js' | grep -v '.
 do 
 	cp "${src_dir}/gui/${filename}" "${output_dir}/gui/${filename}" 
 done
-babel --presets "@babel/preset-react" --plugins "@babel/plugin-transform-modules-commonjs" --minified --no-comments -o "${output_dir}/gui/gui.min.js"  "${src_dir}/gui/hooks.jsx" "${src_dir}/gui/icons.jsx" "${src_dir}/gui/theme.jsx" "${src_dir}/gui/application.jsx" "${src_dir}/gui/index.jsx" "${src_dir}/gui/locale.jsx"
+babel --presets "@babel/preset-react" --plugins "@babel/plugin-transform-modules-commonjs" --minified --no-comments -o "${output_dir}/gui/gui.min.js"  "${src_dir}/gui/hooks.jsx" "${src_dir}/gui/icons.jsx" "${src_dir}/gui/theme.jsx" "${src_dir}/gui/application.jsx" "${src_dir}/gui/index.jsx" "${src_dir}/gui/locale.jsx" "${src_dir}/gui/init.jsx"
 
 echo "Copy resources"
 cp -rp "${src_dir}/esconnector.xml" "${output_dir}/esconnector.xml"
 cp -rp "${src_dir}/CSXS" "${output_dir}/CSXS"
+cp -rp "${src_dir}/WEB-INF" "${output_dir}/WEB-INF"
 cp "${src_dir}/index.production.html" "${output_dir}/index.html"
+cp "${src_dir}/logout.html" "${output_dir}/logout.html"
 
 echo 
 echo "Build Adobe Exchange Packages"
 
 cd "${output_dir}"
-zip -r "${build_dir}/${pkgname}_PRD.zip" * > /dev/null
+zip -r "${build_dir}/${pkgname}_prd.zip" * > /dev/null
 cd - > /dev/null
 
 cd "${src_dir}"
-zip -r "${build_dir}/${pkgname}_DEV.zip" * > /dev/null
+zip -r "${build_dir}/${pkgname}_dev.zip" * > /dev/null
 cd - > /dev/null
 
 echo 
-echo "Build WWTM 2020 Distribution Package"
+echo "Build Beta Distribution Package"
 cd "${root_dir}"
-zip "${build_dir}/${pkgname}_WWTM2020.zip" "install_mac" "install_win.bat" "build/${pkgname}_PRD.zip" 
+zip "${build_dir}/${pkgname}_install.zip" "install_mac" "install_win.bat" "build/${pkgname}_prd.zip"
 
 echo 
 echo "Done"
