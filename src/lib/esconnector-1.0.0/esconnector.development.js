@@ -533,12 +533,16 @@ window.cef = (function() {
 					}
 				};
 	
-				if(options.data) {
-					xhr.send(options.data);
-				} else {
-					xhr.send();
-				}
-	
+				try {
+					if(options.data) {
+						xhr.send(options.data);
+					} else {
+						xhr.send();
+					}
+				} catch(e) {
+					callback(e, null, xhr);
+				}	
+
 				return xhr;
 			},
 	
@@ -1074,11 +1078,11 @@ window.cef = (function() {
 						formData.append('file', filedata, assetName);
 						this._httpPost(url, {
 							data: formData,
-							user: atob(this.authorization.basic)
+							user: this.authorization.basic != null ? atob(this.authorization.basic) : null
 						}, createAssetCallback);
 					} else {
 						this._httpPost(url, {
-							user: atob(this.authorization.basic)
+							user: this.authorization.basic != null ? atob(this.authorization.basic) : null
 						}, createAssetCallback);
 					}
 				}
@@ -1100,7 +1104,6 @@ window.cef = (function() {
 					data.append("cmisaction", "setContent");
 					data.append("overwriteFlag", "true");
 					
-
 					if(dataOrOptions) {
 						if(typeof dataOrOptions == "string" || dataOrOptions instanceof Blob) {
 							data.append('content', dataOrOptions);
@@ -1109,7 +1112,7 @@ window.cef = (function() {
 						}
 						this._httpPost(url, {
 							data: data,
-							user: atob(this.authorization.basic)
+							user: this.authorization.basic != null ? atob(this.authorization.basic) : null
 						}, (err) => {
 							if(err) {
 								callback(err);
@@ -1452,7 +1455,7 @@ window.cef = (function() {
 					if(error) {
 						callback(error, null);
 					} else {
-						callback(null, endpoint + "?rtype=ES5&ts=" + Date.now());
+						callback(null, endpoint + "?ts=" + Date.now());
 					}
 				});
 			},
@@ -1690,7 +1693,7 @@ window.cef = (function() {
 			throw new Error(ERR_NOT_IMPLEMENTED, "Method 'getIndexURL' is not implemented");
 		},
 
-		updateDocumentMetadata: function(callback)  { throw new Error(ERR_NOT_IMPLEMENTED, "Method 'downloadDocument' is not implemented"); },
+		updateDocumentMetadata: function(callback)  { throw new Error(ERR_NOT_IMPLEMENTED, "Method 'updateDocumentMetadata' is not implemented"); },
 
 		downloadDocument: function(assetId, callback)  { throw new Error(ERR_NOT_IMPLEMENTED, "Method 'downloadDocument' is not implemented"); },
 
@@ -2027,15 +2030,6 @@ function initAdobeCC(initCallback)
 		//	'X-Requested-With' : 'NodeJS-HTTP' 
 		}, options.headers);
 
-/*		
-		if(module.net.cookies) {
-			let cookies = [];
-			for (let key in module.net.cookies)
-				cookies.push(key + "=" + module.net.cookies[key]);
-			if(cookies.length > 0)
-				options.headers["Cookie"] = cookies;
-		}
-*/
 		if(document.cookie && document.cookie.length > 0) {
 			let cookies = [];
 			document.cookie.split("; ").forEach((cookie) => {
@@ -2696,8 +2690,8 @@ function initAdobeCC(initCallback)
 			supportedTypes = ["application/vnd.adobe.indesign"]
 		} else if(module.host.name == "ILST") {
 			supportedTypes = [/application\/(vnd.adobe.)?illustrator/, /application\/(pdf|postscript)/]
-		} else if(module.host.name == "PSPX") {
-			supportedTypes = [/image\/.*/, /application\/(vnd.adobe.)?photoshop/]
+		} else if(module.host.name == "PHXS" || module.host.name == "PSPX") {
+			supportedTypes = [/image\/.*/, /application\/(vnd.adobe.)?photoshop/, "application/rdf+xml"]
 		}
 
 		/* TEMP - Search does not return mime type */
@@ -3431,7 +3425,6 @@ function initAdobeCC(initCallback)
 			}
 		}
 	});
-
 	
 	var timeout = null;
 	function documentUpdateTask() {
@@ -3448,6 +3441,31 @@ function initAdobeCC(initCallback)
 			clearTimeout(timeout);
 	});
 	documentUpdateTask();
+
+	// Set FlyOutMenu
+	_csinterface.setPanelFlyoutMenu('<Menu> \
+										<MenuItem Id="flmReload" Label="' + module.locale.get("menu.reload") + '" Enabled="true" Checked="false"/> \
+										<MenuItem Id="flmHome" Label="' + module.locale.get("menu.home") + '" Enabled="true" Checked="false"/> \
+										<MenuItem Label="---"/> \
+										<MenuItem Id="flmGetSupport" Label="' + module.locale.get("menu.getsupport") + '" Enabled="true" Checked="false"/> \
+										<MenuItem Id="flmAbout" Label="' + module.locale.get("menu.about") + '" Enabled="true" Checked="false"/> \
+									</Menu>');
+
+	_csinterface.addEventListener("com.adobe.csxs.events.flyoutMenuClicked", (event) => {
+		if(event.data && event.data.menuId) {
+			if(event.data.menuId == "flmReload") {
+				window.location.reload();
+			} else if(event.data.menuId == "flmHome") {
+				window.location.href = cef.extension.index;
+			} else if(event.data.menuId == "flmGetSupport") {
+				_csinterface.openURLInDefaultBrowser(module.locale.get("menu.getsupport.url"));
+			} else if(event.data.menuId == "flmAbout") {
+				_csinterface.openURLInDefaultBrowser(module.locale.get("menu.about.url"));
+			}
+		}
+	});
+						
+	
 
 	module.host.init(initCallback);
 	console.log("Adobe CC Extension Loaded");
@@ -3480,7 +3498,12 @@ function initMSOffice(initCallback)
 	/**
 	 * Controller
 	 */
-
+	module.controller.updateDocumentMetadata = function(callback) {
+		callback = callback || DEFAULT_CALLBACK;
+		// TODO: Implement for MS Office
+		// Try to merge with Adobe by moving host specific parts in the module.host object
+		callback();
+	}
 
 	Office.onReady();
 	initCallback(null);

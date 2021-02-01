@@ -5,6 +5,14 @@ cef.locale.define("C", {
 	// Splash image displayed on the Welcome Page
 	"splashimage": "./gui/logincard.png",
 
+	// FlyOut Menu
+	"menu.reload": "Reload",
+	"menu.home": "Go Home",
+	"menu.getsupport": "Get Support",
+	"menu.about": "About DALIM SOFTWARE GmbH",
+	"menu.getsupport.url": "https://www.dalim.com",
+	"menu.about.url": "https://www.dalim.com",
+
 	// Text in the Connect button
 	"connect": "Connect",
 	// Text replacement in the connect button when connecting
@@ -135,6 +143,7 @@ cef.locale.define("C", {
 	"application/vnd.adobe.indesign": "Adobe InDesign",
 	"application/vnd.adobe.indesign-idml-package": "IDML Package",
 	"application/vnd.adobe.photoshop": "Adobe Photoshop",
+	"application/rdf+xml": "Adobe Photoshop",
 	"application/illustrator": "Adobe Illustrator",
 	"application/postscript": "Postscript",
 	"text/plain": "Text",
