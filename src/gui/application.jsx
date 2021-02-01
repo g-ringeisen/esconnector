@@ -243,7 +243,7 @@
 			function setPreference(name, value) {
 				cef.prefs.set(name, value);
 				prefState[name] = value;
-				updatePrefState(prefState);
+				updatePrefState({...prefState});
 			};
 
 			function disconnectRepository() {
@@ -1633,7 +1633,9 @@
 			const [alertMessage,   setAlertMessage]     = React.useState(null);
 
 			function updateLinkSelection(selection) {
-				updateDocumentLinks([...applyLinkSelection(documentLinks, selection)]);
+				if(documentLinks) {
+					updateDocumentLinks([...applyLinkSelection(documentLinks, selection)]);
+				}
 			}
 
 			function pushNotification(type, text, delay) {
@@ -1878,10 +1880,12 @@
 					var doc   = {...document};
 					var links = document.links ? [...document.links] : null;
 					updateDocumentInfo(doc);
-					if(documentInfo.id && documentInfo.id == document.id)
-						updateDocumentLinks(applyLinkSelection(links, extractLinkSelection(documentLinks)));
-					else 
-						updateDocumentLinks(links);
+					if(links) {
+						if(documentInfo.id && documentInfo.id == document.id)
+							updateDocumentLinks(applyLinkSelection(links, extractLinkSelection(documentLinks)));
+						else 
+							updateDocumentLinks(links);
+					}
 				}
 			};
 		

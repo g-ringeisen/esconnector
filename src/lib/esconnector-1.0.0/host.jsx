@@ -745,6 +745,49 @@ if(!csif || csif.version != "0") {
 			return [];
 		}
 
+		csif.getActiveDocument = function() {
+			try {
+				return  app.activeDocument;
+			} catch(e) {
+				return null;
+			}
+		}
+
+		csif.getDocumentById = function(docId) {
+			for(var i=0; i<app.documents.length; i++) {
+				if(app.documents[i].id == docId) {
+					return app.documents[i];
+				}
+			}
+			return null;
+		}
+
+		csif.getDocumentInfo = function(doc) {
+			
+			if(typeof doc == "string" || typeof doc == "number" || doc instanceof Number)
+				doc = csif.getDocumentById(doc);
+			if(!doc)
+				doc = csif.getActiveDocument();
+			if(!doc || !(doc instanceof Document))
+				return {};
+
+			var info = {
+				id: doc.id, 
+				name: doc.name,
+				path: null,
+				modified: !doc.saved,
+				links: null
+			};
+
+			try {
+				info.path = doc.fullName.fsName;
+			} catch(e) {
+				// ...
+			}
+
+			return info;
+		}
+
 		csif.saveDocument = function(id, filepath) {
 			var doc = csif.getDocumentById(id);
 			if(filepath) {
@@ -756,11 +799,17 @@ if(!csif || csif.version != "0") {
 			return csif.getDocumentInfo(doc);
 		}
 
-		csif.exportPDF = function(id, filepath) {
+		csif.getPDFExportPresets = function() {
+			return [];
+		}
+
+		csif.exportPDF = function(id, filepath, preset) {
 			var doc  = csif.getDocumentById(id);
 			var file = File(filepath);
-			//doc.exportFile(ExportFormat.pdfType, file, false);
-			//doc.saveAs(file, PDFOptions);
+			var opts = new PDFSaveOptions();
+			if(preset)
+				opts.presetFile = preset;
+			doc.saveAs(file, opts, true);
 		}
 
 	}
