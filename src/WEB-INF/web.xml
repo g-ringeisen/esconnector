@@ -1,0 +1,7 @@
+<web-app>
+	<display-name>DALIM ES Connector</display-name>
+	<description>The official DALIM ES Connector for Adobde CC and MS Office</description>
+	
+	<!-- No Servlet, fo far-->
+	
+</web-app>
