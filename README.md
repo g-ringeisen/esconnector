@@ -8,27 +8,27 @@
 **Step 1** - Unzip the Archive or clone the repository
 
 **Step 2** - Copy the `src` or `build/output` folder as `ESConnector` in the Adobe CEP folder.
-<pre>
-$ cd &lt;your project folder&gt;
+```
+$ cd <your project folder>;
 $ cp -rp ./build/output "/Library/Application Support/Adobe/CEP/extensions/ESConnector"
-</pre>
+```
 
 In a developpement environement, it is recommanded to create a softlink instead of copying the source so you test your changes immediately.
-<pre>
-$ ln -s "&lt;your project folder&gt;/src" "/Library/Application Support/Adobe/CEP/extensions/ESConnector"
-</pre> 
+```
+$ ln -s "<your project folder>/src" "/Library/Application Support/Adobe/CEP/extensions/ESConnector"
+```
 
 **Step 3** - Enable the debug mode to run non signed extension. Depending on the version of Adobe CC you have, the command might differ.
 
 For `Adobe CC 2019` and `2020`
-<pre>
+```
 $ defaults write ~/Library/Preferences/com.adobe.CSXS.9.plist PlayerDebugMode 1
-</pre>
+```
 
 For `Adobe CC 2021`
-<pre>
+```
 $ defaults write ~/Library/Preferences/com.adobe.CSXS.10.plist PlayerDebugMode 1
-</pre>
+```
 
 **Step 4** - Open either your `Adobe InDesign`, `Adobe Illustrator` or `Adobe Photoshop`, then go to the menu `Window > Extensions > DALIM ES`
 
@@ -37,33 +37,36 @@ $ defaults write ~/Library/Preferences/com.adobe.CSXS.10.plist PlayerDebugMode 1
 **Step 1** - Unzip the Archive or clone the repository
 
 **Step 2** - Copy the `src` or `build/output` folder as `ESConnector` in the Adobe CEP folder.
-<pre>
+```
 Win(x86): C:\Program Files\Common Files\Adobe\CEP\extensions
 Win(x64): C:\Program Files (x86)\Common Files\Adobe\CEP\extensions
-</pre>
+```
 
 **Step 3** - Enable the debug mode to run non signed extension. Depending on the version of Adobe CC you have, the registry key might differ.
 
 For `Adobe CC 2019` and `2020`
-<pre>
+```
 regedit > HKEY_CURRENT_USER/Software/Adobe/CSXS.9
-</pre>
+```
 For `Adobe CC 2021`
-<pre>
+```
 regedit > HKEY_CURRENT_USER/Software/Adobe/CSXS.10
-</pre>
+```
 Then add a new entry `PlayerDebugMode` of type `string` with the value of `1`.
 
 ## Controller
 
-    cef.controller
-	sd
+...
+```
+cef.controller
+sd
+```
 ...
 
 
 #### `cef.controller.getActiveDocument()`
 
-...
+Returns a `Document` object describing the active document displayed in the host application
 
 #### `cef.controller.getActiveDocumentLink()`
 
@@ -71,37 +74,50 @@ Then add a new entry `PlayerDebugMode` of type `string` with the value of `1`.
 
 #### `cef.controller.getRepositoryName()`
 
-...
+Returns the current repository name or `null` if the connector is not yet connected to any repository (e.g. on the server selection page)
 
 #### `cef.controller.getAccountName()`
 
-...
+Returns the account name of the current user or `null` if the connector is not yet authenticated.
 
 #### `cef.controller.getIndexURL()`
 
-...
+Returns the URL of the index page of the Connector. This function is useful to redirect the user to the server selection page.
 
 #### `cef.controller.isSupportedDocumentType(type)`
 + `type` - A document mime type
 
-Returns `true` if the provided `type` is a supported document format for the host application. We consider as a document, the kind of file the host application is able to open and save.
+Returns `true` if the provided `type` is a supported document format for the host application, `false` otherwise. We consider as a document, the kind of file the host application is able to open and save.
 
 #### `cef.controller.isSupportedLinkType(type)`
-+ `type` - A document mime type
+#### `cef.controller.isSupportedAssetType(type)`
++ `type` - An asset mime type
 
-Returns `true` if the provided `type` is a supported asset format for the host application. We consider as an asset, the files or links that can be placed inside a document.
+Returns `true` if the provided `type` is a supported asset format for the host application, `false` otherwise. We consider as an asset, the kind of files that can be placed inside or linked to a document.
 
 #### `cef.controller.getAsset(assetId, callback)`
++ `assetId` - An asset ID
++ `callback <Function(err, asset)>`
+	+ `err <Object>` - The error message if one occurs, `null` otherwise.
+	+ `asset <Asset>` - The requested `Asset` or `null` if the asset does not exist.
 
-...
+Retreives the asset properties from a given `assetId`.
 
 #### `cef.controller.listAssets(assetId, callback)`
++ `assetId` - An asset ID
++ `callback <Function(err, asset)>`
+	+ `err <Object>` - The error message if one occurs, `null` otherwise.
+	+ `assetList <Asset[]>` - An array of `Asset` or `null` if the provided `assetId` was not the ID of a container.
 
-...
+Retreives all the assets in a container (folder) from a given `assetId`. If the `assetId` is the one of a document, the function will retreive all the revisions of the document.
 
 #### `cef.controller.searchAssets(query, callback)`
++ `query` - A search query
++ `callback <Function(err, asset)>`
+	+ `err <Object>` - The error message if one occurs, `null` otherwise.
+	+ `assetList <Asset[]>` - An array of `Asset` matching the search `query`. 
 
-...
+Retreives all the assets matching the search `query`.
 
 #### `cef.controller.checkAssetOut(assetId, callback)`
 
@@ -111,7 +127,7 @@ Returns `true` if the provided `type` is a supported asset format for the host a
 
 ...
 
-#### `cef.controller.checkAssetIn(assetId, data, callback)`
+#### `cef.controller.checkAssetIn(assetId, [data,] callback)`
 
 ...	
 
