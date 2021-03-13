@@ -585,10 +585,10 @@
 				size:       [],
 				path:       [],
 				assetId:    [],
+				assetPath:  [],
 				version:    [],
 				rendition:  [],
 				repository: [],
-				location:   [],
 			};
 
 			for(const link of sortedLinks) {
@@ -633,7 +633,7 @@
 					selectionProps.version.push(link.version);
 					selectionProps.rendition.push(link.rendition);
 					selectionProps.repository.push(link.repository);
-					selectionProps.location.push(link.location);
+					selectionProps.assetPath.push(link.assetPath);
 
 					if(globalRenditionAction == null && renditionAction != null)
 						globalRenditionAction = renditionAction;
@@ -759,6 +759,12 @@
 								<Typography className={classes.value}>{_defaultTransformFunction(_defaultMergeFunction(selectionProps.assetId))}</Typography>
 							</Grid>
 							<Grid item xs={4}>
+								<Typography>{cef.locale.get("AssetPath")} :</Typography>
+							</Grid>
+							<Grid item xs={8}>
+								<Typography className={classes.value}>{_defaultTransformFunction(_defaultMergeFunction(selectionProps.assetPath))}</Typography>
+							</Grid>
+							<Grid item xs={4}>
 								<Typography>{cef.locale.get("AssetVersion")} :</Typography>
 							</Grid>
 							<Grid item xs={8}>
@@ -775,12 +781,6 @@
 							</Grid>
 							<Grid item xs={8}>
 								<Typography className={classes.value}>{_defaultTransformFunction(_defaultMergeFunction(selectionProps.repository))}</Typography>
-							</Grid>
-							<Grid item xs={4}>
-								<Typography>{cef.locale.get("Location")} :</Typography>
-							</Grid>
-							<Grid item xs={8}>
-								<Typography className={classes.value}>{_defaultTransformFunction(_defaultMergeFunction(selectionProps.location))}</Typography>
 							</Grid>
 						</Grid>
 					</ExpansionPanelDetails>
@@ -902,16 +902,16 @@
 								<Typography className={classes.value}>{_defaultTransformFunction(info.version)}</Typography>
 							</Grid>
 							<Grid item xs={4}>
+								<Typography>{cef.locale.get("AssetPath")} :</Typography>
+							</Grid>
+							<Grid item xs={8}>
+								<Typography className={classes.value}>{_defaultTransformFunction(info.assetPath)}</Typography>
+							</Grid>
+							<Grid item xs={4}>
 								<Typography>{cef.locale.get("Repository")} :</Typography>
 							</Grid>
 							<Grid item xs={8}>
 								<Typography className={classes.value}>{_defaultTransformFunction(info.repository)}</Typography>
-							</Grid>
-							<Grid item xs={4}>
-								<Typography>{cef.locale.get("Location")} :</Typography>
-							</Grid>
-							<Grid item xs={8}>
-								<Typography className={classes.value}>{_defaultTransformFunction(info.location)}</Typography>
 							</Grid>
 							<Grid item xs={4}>
 								<Typography>{cef.locale.get("LockedBy")} :</Typography>

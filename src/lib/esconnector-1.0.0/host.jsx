@@ -280,7 +280,8 @@ if(!csif || csif.version != "0") {
 				metadata.size      = link.size;
 				metadata.path      = _getLinkPath(link);
 				metadata.thumbnail = link.extractLabel("thumbnail");
-	
+				if(!metadata.assetPath && metadata.location)
+					metadata.assetPath = metadata.location;
 				list.push(metadata);
 			}
 			return list;
@@ -604,6 +605,8 @@ if(!csif || csif.version != "0") {
 				metadata.size      = file.length;
 				metadata.path      = file.fsName;
 				metadata.thumbnail = csif.extractTag(link, "thumbnail", null);
+				if(!metadata.assetPath && metadata.location)
+					metadata.assetPath = metadata.location;
 				links.push(metadata);
 			}
 			return links;

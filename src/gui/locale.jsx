@@ -62,7 +62,7 @@ cef.locale.define("C", {
 	"AssetPath" : "Asset path",
 	"AssetVersion" : "Asset version",
 	"Repository" : "Repository",
-	"Location": "Location",
+	"AssetPath": "Asset path",
 	"LockedBy" : "Locked by",
 	"Rendition": "Rendition",
 	"FileName": "File name",
@@ -147,7 +147,8 @@ cef.locale.define("C", {
 	"application/illustrator": "Adobe Illustrator",
 	"application/postscript": "Postscript",
 	"text/plain": "Text",
-	"video/quicktime": "QuickTime Video"
+	"video/quicktime": "QuickTime Video",
+	"application/vnd.openxmlformats-officedocument.wordprocessingml.document": "Word document"
 });
 
 cef.locale.define("en", {
@@ -367,5 +368,6 @@ cef.locale.define("fr", {
 	"dalim:thumbnail": "Miniature",
 
 	// File types
-	"video/quicktime": "Vidéo QuickTime"
+	"video/quicktime": "Vidéo QuickTime",
+	"application/vnd.openxmlformats-officedocument.wordprocessingml.document": "Document Word"
 });

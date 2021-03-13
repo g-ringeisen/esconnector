@@ -21,7 +21,7 @@ window.cef = (function() {
 	 * CONST
 	 */
 	const CEF_VERSION           = "1.0"
-	const CEF_BUILD             = "210201"
+	const CEF_BUILD             = "210309"
 	const CEF_CREATOR           = "Gautier RINGEISEN"
 	const CEF_CREATORMAIL       = "gautier.ringeisen@gmail.com"
 	const CEF_COPYRIGHT         = "Copyright \u00A9 2020, DALIM SOFTARE GmbH"
@@ -1229,15 +1229,17 @@ window.cef = (function() {
 			});
 		}
 		
-		getObjectURL(uri) {
+		getObjectURL(uri, auth) {
 			var url = null;
+			if(auth === undefined)
+				auth = true;
 			if(uri.substring(0,1) == "/") {
 				url = new URL(this.rootFolderUrl + encodeURI(uri));
 			} else {
 				url = new URL(this.rootFolderUrl);
 				url.searchParams.append("objectId", uri);
 			}
-			if(this.authorization.token)
+			if(auth && this.authorization.token)
 				url.searchParams.append("token", this.authorization.token);
 			return url;
 		}
@@ -1245,11 +1247,15 @@ window.cef = (function() {
 		getContentURL(contentId, timestamp) {
 			var url = new URL(this.rootFolderUrl);
 			url.searchParams.append("selector", "content");
-			url.searchParams.append("streamId", contentId);
 
-			var matches = null;
-			if(matches = contentId.match(/(?:[A-Z]-([0-9]+:[0-9]+:[0-9]+))/i))
+			var matches = contentId.match(/(?:[A-Z]-([0-9]+:[0-9]+:[0-9]+))/i);
+			if(matches) {
+				url.searchParams.append("streamId", contentId);
 				url.searchParams.append("objectId", matches[1]);
+			} else {
+				url.searchParams.append("objectId", contentId);
+			}
+			
 			if(timestamp)
 				url.searchParams.append("ts", timestamp);
 			if(this.authorization.token)
@@ -1309,6 +1315,7 @@ window.cef = (function() {
 
 		_convertObjectProperties(data) {
 			var v = function(d) { return (d && d.value) ? d.value : null; }
+			var h = function(d) { return (d && d.href)  ? d.href  : null; }
 			var p = data.properties;
 			var r = data.renditions;
 			var a = data.allowableActions || {}
@@ -1318,6 +1325,7 @@ window.cef = (function() {
 					type: v(p["cmis:baseTypeId"]) == "cmis:document" ? "Document" : "Folder",
 					name: v(p["cmis:name"]),
 					path: v(p["cmis:path"]),
+					url: h(this.getObjectURL(v(p["cmis:objectId"]), false)),
 					checkedOut: v(p["cmis:isVersionSeriesCheckedOut"]),
 					checkOutId: v(p["cmis:versionSeriesCheckedOutId"]),
 					checkOutUser: v(p["cmis:versionSeriesCheckedOutBy"]),
@@ -2281,7 +2289,7 @@ function initAdobeCC(initCallback)
 			docinfo.edited   = (docinfo.dtime || 0) < (docinfo.mtime || 0);
 		}
 		if(docinfo.links && docinfo.links.length > 0) {
-			const excludes = ["assetId", "version", "repository", "location", "rendition", "contentId"]
+			const excludes = ["assetId", "assetUrl", "assetPath", "version", "repository", "rendition", "contentId"]
 			for (var link of docinfo.links) {
 				if(link.path) {
 					var stat     = _getFileStat(link.path);
@@ -2578,8 +2586,9 @@ function initAdobeCC(initCallback)
 	function _updateAssetFileMetadata(path, asset, extramdt) {
 		var metadata = asset == null ? {} : {
 			assetId:        asset.id,
+			assetUrl:       asset.url,
+			assetPath:      asset.path,
 			version:        asset.version,
-			location:       asset.path,
 			checkedOut:     asset.checkedOut,
 			checkOutId:     asset.checkOutId,
 			checkOutUser:   asset.checkOutUser,
@@ -3014,10 +3023,11 @@ function initAdobeCC(initCallback)
 						// Update all links pointing to that file
 						module.host.updateLinks(docId, filepath, {
 							assetId:    metadata.assetId,
+							assetUrl:   metadata.assetUrl,
+							assetPath:  metadata.assetPath,
 							version:    metadata.version,
 							rendition:  metadata.rendition,
 							repository: metadata.repository,
-							location:   metadata.location,
 							contentId:  metadata.contentId
 						}, (err) => {
 							filestate.unset();
@@ -3059,7 +3069,7 @@ function initAdobeCC(initCallback)
 						module.host.updateLinks(docId, link.path, {
 							path:      info.path,
 							version:   info.version,
-							location:  info.location,
+							assetPath: info.assetPath,
 							rendition: info.rendition,
 							contentId: info.contentId,
 						}, (err) => {
@@ -3126,10 +3136,11 @@ function initAdobeCC(initCallback)
 								// Update all links pointing to that file
 								module.host.updateLinks(docId, filepath, { 
 									assetId:    metadata.assetId,
+									assetUrl:   metadata.assetUrl,
+									assetPath:  metadata.assetPath,
 									version:    metadata.version,
 									rendition:  metadata.rendition,
 									repository: metadata.repository,
-									location:   metadata.location,
 									contentId:  metadata.contentId
 								}, (err) => {
 									filestate.unset();
@@ -3194,10 +3205,11 @@ function initAdobeCC(initCallback)
 									count1++;
 									module.host.updateLink(docId, linkId, {
 										assetId:    asset.id,
+										assetUrl:   asset.url,
+										assetPath:  asset.path,
 										version:    null,
 										rendition:  RENDITION_HIGHRES,
 										repository: module.controller.getRepositoryName(),
-										location:   asset.path,
 										contentId:  null
 									}, (err) => {
 										if(err)
@@ -3234,10 +3246,11 @@ function initAdobeCC(initCallback)
 			var docId = module.host.document.id;
 			module.host.updateLink(docId, linkId, {
 				assetId:    assetId,
+				assetUrl:   null,
+				assetPath:  null,
 				version:    null,
 				rendition:  (module.prefs.get("UseHighResolution", false) ? RENDITION_HIGHRES : RENDITION_PREVIEW),
 				repository: module.controller.getRepositoryName(),
-				location:   null,
 				contentId:  null
 			}, (err) => {
 				if(err)
@@ -3256,10 +3269,11 @@ function initAdobeCC(initCallback)
 			var docId = module.host.document.id;
 			module.host.updateLink(docId, linkId, {
 				assetId:    null,
+				assetUrl:   null,
+				assetPath:  null,
 				version:    null,
 				rendition:  null,
 				repository: null,
-				location:   null,
 				contentId:  null
 			}, (err) => {
 				callback(err, null);
@@ -3281,10 +3295,11 @@ function initAdobeCC(initCallback)
 				} else {
 					module.host.placeLink(docId, info.path, {
 						assetId:    info.assetId,
+						assetUrl:   info.assetUrl,
+						assetPath:  info.assetPath,
 						version:    info.version,
 						rendition:  info.rendition,
 						repository: info.repository,
-						location:   info.location,
 						contentId:  info.contentId
 					}, (err, linkId) => {
 						if(err) {
@@ -3304,7 +3319,7 @@ function initAdobeCC(initCallback)
 									module.host.updateLink(docId, linkId, {
 										path:      info.path,
 										version:   info.version,
-										location:  info.location,
+										assetPath: info.assetPath,
 										rendition: info.rendition,
 										contentId: info.contentId,
 									}, (err) => {
@@ -3355,7 +3370,7 @@ function initAdobeCC(initCallback)
 							path:      info.path,
 							rendition: info.rendition,
 							version:   info.version,
-							location:  info.location,
+							assetPath: info.assetPath,
 							contentId: info.contentId,
 						}, (err) => {
 							linkstate.unset();
@@ -3505,7 +3520,72 @@ function initMSOffice(initCallback)
 		vendor: "Microsoft",
 		userAgent: navigator.userAgent,
 		locale: _hostInfo.hostLocale,
-		platform: navigator.platform
+		platform: navigator.platform,
+
+		init: function(callback) {
+
+			Office.onReady();
+
+			module.host.getDocumentInfo(null, (err, docinfo) => {
+				if(err) {
+					console.error(err);
+					callback(err);
+				} else {
+					if(docinfo) {
+						module.host.document = docinfo;
+						module.host.emit("documentChanged", module.host.document);
+					}
+				}
+				callback(null);
+			});
+		},
+
+		newDocument: function(callback) {
+			Word.run(function (context) {
+				var document = context.application.createDocument();
+				document.open();
+				return context.sync();
+			})
+			.then(function(result) {
+				callback(null, result);
+			})
+			.catch(function (error) {
+				callback(error, null);
+			});
+		},
+
+		openDocument(base64data, callback) {
+			Word.run(function (context) {
+				var document = context.application.createDocument(base64data);
+				document.open();
+				return context.sync();
+			})
+			.then(function(result) {
+				callback(null, result);
+			})
+			.catch(function (error) {
+				callback(error, null);
+			});
+		},
+
+		saveDocument: function(callback) {
+			
+		},
+
+		getDocumentInfo: function(callback) {
+			Word.run(function (context) {
+				var document = context.document;
+				
+				context.sync();
+				return {name: "Test.docx", doc: document};
+			})
+			.then(function(result) {
+				callback(null, result);
+			})
+			.catch(function (error) {
+				callback(error, null);
+			});
+		},
 
 		// TODO
 	});
@@ -3520,9 +3600,72 @@ function initMSOffice(initCallback)
 		callback();
 	}
 
-	Office.onReady();
-	initCallback(null);
+	module.controller.isSupportedDocumentType = function(type) {
+		var supportedTypes = [];
+		if(module.host.name == "word") {
+			supportedTypes = [/application\/vnd.*word.*document/]
+		}
 
+		/* TEMP - Search does not return mime type */
+		if(type == null)
+			return true;
+		/* */
+
+		if(type != null) {
+			type = type.toLowerCase();
+			for(const supportedType of supportedTypes) {
+				if((supportedType instanceof RegExp && type.match(supportedType)) || type == supportedType)
+					return true;
+			}
+		}
+		return false;
+	}
+
+	module.controller.isSupportedLinkType = function(type) {
+		var supportedTypes = [];
+		if(module.host.name == "Word") {
+			supportedTypes = [/image\/.*/]
+		}
+
+		/* TEMP - Search does not return mime type */
+		if(type == null)
+			return true;
+		/* */
+
+		if(type != null) {
+			type = type.toLowerCase();
+			for(const supportedType of supportedTypes) {
+				if((supportedType instanceof RegExp && type.match(supportedType)) || type == supportedType)
+					return true;
+			}
+		}
+		return false;
+	}
+
+	module.controller.checkDocumentOut = function(assetId, callback) {
+		callback = callback || DEFAULT_CALLBACK;
+		var assetstate = _assetStateManager.setState(assetId, "checkingout");
+		module.controller.lockAsset(assetId, (err) => {
+			if(err) {
+				assetstate.unset();
+				callback(err);
+			} else {
+				module.repository.getContent(assetId, {format: "base64"}, (err, data) => {
+					if(err) {
+						assetstate.unset();
+						callback(err);
+					} else {
+						module.host.openDocument(data, (err, docinfo) => {
+							assetstate.unset();
+							callback(err, docinfo);
+						});
+					}
+				});
+			}
+		});
+	}
+
+	module.host.init(initCallback);
 	console.log("MS Office Extension Loaded");
 }
 
