@@ -64,7 +64,8 @@ cd - > /dev/null
 echo 
 echo "Build Beta Distribution Package"
 cd "${root_dir}"
-zip "${build_dir}/${pkgname}_install.zip" "install_mac" "install_win.bat" "build/${pkgname}_prd.zip"
+zip "${build_dir}/${pkgname}_install.zip" "install_mac" "install_win.bat" "build/${pkgname}_prd.zip" > /dev/null
+cd - > /dev/null
 
 echo 
 echo "Done"

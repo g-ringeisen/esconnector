@@ -33,7 +33,7 @@
 	}
 
 	module.SignOutIcon = (props) => {
-		return (<Icon {...props}>exit_to_app</Icon>);
+		return (<Icon {...props}>logout</Icon>);
 	}
 
 	module.EditIcon = (props) => {
