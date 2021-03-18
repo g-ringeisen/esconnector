@@ -55,8 +55,8 @@ The `Browser` tab allows you to navigate in the repository. You can place assets
 
 #### Navigation bar
 
-| &nbsp; | Action | Description |
-| :: | :----- | :---------- |
+|   | Action | Description |
+| - | ----- | ----------- |
 | <img src="./doc/rsrc/baseline_home_black_18dp.png"/>       | **Home**    | Go to the root folder of the repository |
 | <img src="./doc/rsrc/baseline_arrow_back_black_18dp.png"/> | **Back**    | Go to the parent folder |
 | <img src="./doc/rsrc/baseline_search_black_18dp.png"/>     | **Search**  | Enable the search mode |
