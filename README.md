@@ -55,7 +55,7 @@ The `Browser` tab allows you to navigate in the repository. You can place assets
 
 #### Navigation bar
 
-|    | Action | Description |
+| &nbsp; | Action | Description |
 | :: | :----- | :---------- |
 | <img src="./doc/rsrc/baseline_home_black_18dp.png"/>       | **Home**    | Go to the root folder of the repository |
 | <img src="./doc/rsrc/baseline_arrow_back_black_18dp.png"/> | **Back**    | Go to the parent folder |
@@ -67,7 +67,7 @@ The navigation will always display the name of the current folder in the middle.
 
 #### Action bar
 
-|    | Action | Description |
+| &nbsp; | Action | Description |
 | :: | :----- | :---------- |
 | <img src="./doc/rsrc/baseline_create_black_18dp.png"/>         | **Edit**       | Checkout the selected document and start editing it |
 | <img src="./doc/rsrc/baseline_add_box_black_18dp.png"/>        | **Place**      | Place the selected asset(s) in the active document |
