@@ -449,7 +449,10 @@
 				cursor: 'pointer',
 				maxHeight: '23px',
 				maxWidth: '40px',
-				verticalAlign: 'middle'
+				verticalAlign: 'middle',
+				"&[disabled]": {
+					cursor: 'inherit'
+				}
 			}
 		}), {
 			name: "LinkList"
@@ -487,6 +490,8 @@
 			});
 
 			function dispatchAction(event, name, linkId) {
+				if(!name)
+					return;
 				var linkIds = [];
 				if(linkId)
 					linkIds.push(linkId);
@@ -602,10 +607,10 @@
 
 				if(sameRepository) {
 					if(!link.rendition || link.rendition == "dalim:highresolution") {
-						renditionIcon   = <HighresIcon className={classes.linkIcon} color={busy ? "disabled" : "secondary"}/>;
+						renditionIcon   = <HighresIcon className={classes.linkIcon} color={busy ? "disabled" : "secondary"} disabled={busy}/>;
 						renditionAction = !busy ? "setLinkLowres" : null;
 					} else {
-						renditionIcon   = <LowresIcon className={classes.linkIcon} color={busy ? "disabled" : "secondary"}/>;
+						renditionIcon   = <LowresIcon className={classes.linkIcon} color={busy ? "disabled" : "secondary"} disabled={busy}/>;
 						renditionAction = !busy ? "setLinkHighres" : null;
 					}
 
@@ -620,7 +625,7 @@
 						synchAction = !busy ? "checkLinkIn" : null;
 					}
 				} else if(!link.assetId && !link.missing) {
-					synchIcon   = <UploadIcon className={classes.linkIcon} color={busy || props.readonly ? "disabled" : "secondary"}/>;
+					synchIcon   = <UploadIcon className={classes.linkIcon} color={busy || props.readonly ? "disabled" : "secondary"} disabled={busy || props.readonly}/>;
 					synchAction = !busy && !props.readonly ? "uploadLink" : null;
 				}
 
@@ -1926,7 +1931,7 @@
 					<BottomNavigation className={classes.nav} value={currentView} onChange={(e,v) => setCurrentView(v)}>
 						<BottomNavigationAction className={classes.tab} size="small" label={cef.locale.get("Browser")} value="browser" icon={<BrowserIcon fontSize="small"/>} />
 						<BottomNavigationAction className={classes.tab} size="small" label={cef.locale.get("Document")} value="document" icon={<DocumentIcon fontSize="small"/>} />
-						<BottomNavigationAction className={classes.tab} size="small" label={cef.locale.get("Setting")} value="settings" icon={<SettingsIcon fontSize="small"/>} />
+						<BottomNavigationAction className={classes.tab} size="small" label={cef.locale.get("Settings")} value="settings" icon={<SettingsIcon fontSize="small"/>} />
 					</BottomNavigation>
 		
 					{(currentView == "browser") 
