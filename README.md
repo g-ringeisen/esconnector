@@ -56,7 +56,7 @@ The `Browser` tab allows you to navigate in the repository. You can place assets
 #### Navigation bar
 
 |   | Action | Description |
-| - | ----- | ----------- |
+| - | ------ | ----------- |
 | <img src="./doc/rsrc/baseline_home_black_18dp.png"/>       | **Home**    | Go to the root folder of the repository |
 | <img src="./doc/rsrc/baseline_arrow_back_black_18dp.png"/> | **Back**    | Go to the parent folder |
 | <img src="./doc/rsrc/baseline_search_black_18dp.png"/>     | **Search**  | Enable the search mode |
@@ -67,8 +67,8 @@ The navigation will always display the name of the current folder in the middle.
 
 #### Action bar
 
-| &nbsp; | Action | Description |
-| :: | :----- | :---------- |
+|   | Action | Description |
+| - | ------ | ----------- |
 | <img src="./doc/rsrc/baseline_create_black_18dp.png"/>         | **Edit**       | Checkout the selected document and start editing it |
 | <img src="./doc/rsrc/baseline_add_box_black_18dp.png"/>        | **Place**      | Place the selected asset(s) in the active document |
 | <img src="./doc/rsrc/outline_lock_black_18dp.png"/>            | **Lock**       | Lock the selected document on the repository |
@@ -84,8 +84,8 @@ The `Document` tab displays information about the active document and the linked
 
 #### Document action bar
 
-|    | Action | Description |
-| :: | :----- | :---------- |
+|   | Action | Description |
+| - | ------ | ----------- |
 | <img src="./doc/rsrc/baseline_backup_black_18dp.png"/>         | **Upload**     | Upload the active document on the repository |
 | <img src="./doc/rsrc/outline_backup_black_18dp.png"/>          | **Check in**   | Check the active document in. The document will be automatically unlocked. |
 | <img src="./doc/rsrc/outline_lock_black_18dp.png"/>            | **Lock**       | Lock the active document on the repository |
@@ -95,8 +95,8 @@ The `Document` tab displays information about the active document and the linked
 
 #### Asset action bar
 
-|    | Action | Description |
-| :: | :----- | :---------- |
+|   | Action | Description |
+| - | ------ | ----------- |
 | <img src="./doc/rsrc/baseline_hd_black_18dp.png"/>            | **Set highres** | Replace the selected asset with its High resolution rendition |
 | <img src="./doc/rsrc/outline_hd_black_18dp.png"/>             | **Set lowres**  | Replace the selected asset with its Low resolution rendition |
 | <img src="./doc/rsrc/outline_cloud_download_black_18dp.png"/> | **Download**    | Download the selected asset |
@@ -110,8 +110,8 @@ The `Document` tab displays information about the active document and the linked
 
 The `Settings` tab allows you to set your preferences and manage the connection. You can also change the account and the connected repository in this interface.
 
-|    | Action | Description |
-| :: | :----- | :---------- |
+|   | Action | Description |
+| - | ------ | ----------- |
 | <img src="./doc/rsrc/baseline_exit_to_app_black_18dp.png"/> | **Change repository**   | Leave the current repository and go back to the index page of the connector |
 | <img src="./doc/rsrc/baseline_logout_black_18dp.png"/>      | **Sign out**            | Sign out from the current repository and go back to the login page |
 | <img src="./doc/rsrc/baseline_create_black_18dp.png"/>      | **Change cache folder** | Change the location of the cache folder | 
