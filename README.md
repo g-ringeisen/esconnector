@@ -1,5 +1,8 @@
 # ES Connector
 
+<img src="./doc/rsrc/banner.png" width="100%"/>
+<br><br>
+
 *Author: Gautier Ringeisen*
 <br>
 *Version: 1.0*
