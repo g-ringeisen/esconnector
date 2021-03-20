@@ -627,7 +627,7 @@ Removes recusively the content of the cache folder.
 #### Document
 
 ```js
-Document: {
+Document = {
 	assetId: String,            // The asset Id in the repository
 	assetPath: String,          // The asset path in the repository
 	assetUrl: String,           // The asset Url 
