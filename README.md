@@ -651,7 +651,7 @@ Removes recusively the content of the cache folder.
 	repository: String,         // The name of the repository this document comes from
 	state: String,              // The current state of the document
 	version: String             // The current versio of the document
-}
+}: Document
 ```
 
 #### Link
