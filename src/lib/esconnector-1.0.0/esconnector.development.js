@@ -1653,7 +1653,7 @@ window.cef = (function() {
 		checkAssetOut: function(assetId, callback) {
 			module.repository.checkOut(assetId, (err) => {
 				if(err) {
-					callback(err, null);
+					callback(err, false);
 				} else {
 					module.controller.emit("assetChanged", assetId, {checkedOut: true, checkOutUser: module.controller.getAccountName()});
 					callback(null, true);
@@ -1664,7 +1664,7 @@ window.cef = (function() {
 		cancelAssetCheckOut: function(assetId, callback) {
 			module.repository.cancelCheckOut(assetId, (err) => {
 				if(err) {
-					callback(err, null);
+					callback(err, false);
 				} else {
 					module.controller.emit("assetChanged", assetId, {checkedOut: false, checkOutUser: null, checkOutId: null});
 					callback(null, true);
@@ -2654,7 +2654,7 @@ function initAdobeCC(initCallback)
 
 			function folderError(err) {
 				folderCount=0;
-				callback(err);
+				callback(err, false);
 			}
 
 			function folderDone() {
@@ -2664,7 +2664,7 @@ function initAdobeCC(initCallback)
 							// Silent fail
 						});
 					}
-					callback(null);
+					callback(null, true);
 				}
 			}
 
@@ -3162,7 +3162,7 @@ function initAdobeCC(initCallback)
 		} else {
 			var docId = module.host.document.id;
 			module.host.showLink(docId, linkId, (err) => {
-				callback(err);
+				callback(err, err ? false : true);
 			});
 		}
 	}
@@ -3254,7 +3254,7 @@ function initAdobeCC(initCallback)
 				contentId:  null
 			}, (err) => {
 				if(err)
-					callback(err, null);
+					callback(err, 0);
 				else
 					callback(null, 1);
 			});

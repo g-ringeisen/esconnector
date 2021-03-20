@@ -126,15 +126,15 @@ When an Asset coming from the repository is placed in the Document, a set of met
 
 The metadata JSON object has the following properties:
 
-| Name       | Description |
-| ---------- | ----------- |
-| assetId    | The unique ID of the asset withing the repository                    | 
-| assetUrl   | An URL pointing to the asset on the repository                       |
-| assetPath  | The virtual path of the asset within the repository                  |
-| contentId  | The ID of the asset rendition placed in the document                 |
-| rendition  | The current rendition name of the asset as it appear in the document |
-| repository | The name of the repository the asset comes from                      |
-| version    | The version of the asset placed in the document                      |
+| Name         | Description |
+| ------------ | ----------- |
+| `assetId`    | The unique ID of the asset withing the repository                    | 
+| `assetUrl`   | An URL pointing to the asset on the repository                       |
+| `assetPath`  | The virtual path of the asset within the repository                  |
+| `contentId`  | The ID of the asset rendition placed in the document                 |
+| `rendition`  | The current rendition name of the asset as it appear in the document |
+| `repository` | The name of the repository the asset comes from                      |
+| `version`    | The version of the asset placed in the document                      |
 
 These metadata can be extracted from the document as shown below. The method to extract the metadata will differ between InDesign and Illustrator.
 As the metadata are store as a stringified JSON, you will have to decode the value using a JSON library. The JSON encoding/decoding library `json.jsx` is provided with the ES Connector, you can find it in `src/lib/esconnector-1.0.0/`
@@ -271,6 +271,8 @@ sd
 ```
 ...
 
+### Controller functions
+
 #### getActiveDocument
 ```js
 cef.controller.getActiveDocument(): Document
@@ -330,150 +332,330 @@ Returns whether or not the provided mimetype is a supported asset format for the
 #### getAsset
 ```js
 cef.controller.getAsset(
-	assetId: String | Integer, 
+	assetId: String, 
 	callback: function(err: Object, asset: Asset)
 )
 ```
 
 Retreives the asset properties from a given `assetId`.
 
-#### `cef.controller.listAssets(assetId, callback)`
-+ `assetId` - An asset ID
-+ `callback <Function(err, asset)>`
-	+ `err <Object>` - The error message if one occurs, `null` otherwise.
-	+ `assetList <Asset[]>` - An array of `Asset` or `null` if the provided `assetId` was not the ID of a container.
+#### listAssets
+```js
+cef.controller.listAssets(
+	assetId: String, 
+	callback: function(err: Object, assetList: Asset[])
+)
+```
 
 Retreives all the assets in a container (folder) from a given `assetId`. If the `assetId` is the one of a document, the function will retreive all the revisions of the document.
 
-#### `cef.controller.searchAssets(query, callback)`
-+ `query` - A search query
-+ `callback <Function(err, asset)>`
-	+ `err <Object>` - The error message if one occurs, `null` otherwise.
-	+ `assetList <Asset[]>` - An array of `Asset` matching the search `query`. 
+#### searchAssets
+```js
+cef.controller.searchAssets(
+	query: String, 
+	callback: function(err: Object, assetList: Asset[])
+)
+```
 
 Retreives all the assets matching the search `query`.
 
-#### `cef.controller.checkAssetOut(assetId, callback)`
+#### checkAssetOut
+```js
+cef.controller.checkAssetOut(
+	assetId: String, 
+	callback: Function(err: Object, success: Boolean)
+)
+```
 
-...
+Check the asset out by locking it server side.
 
-#### `cef.controller.cancelAssetCheckOut(assetId, callback)`
+#### cancelAssetCheckOut
+```js
+cef.controller.cancelAssetCheckOut(
+	assetId: String, 
+	callback: Function(err: Object, success: Boolean)
+)
+```
 
-...
+Cancel the asset checkout status and unlock it server side.
 
 #### `cef.controller.checkAssetIn(assetId, [data,] callback)`
 
 ...	
 
-#### `cef.controller.lockAsset(assetId, callback)`
+#### lockAsset
+```js
+cef.controller.lockAsset(
+	assetId: String, 
+	callback: Function(err: Object, success: Boolean)
+)
+```
 
-...
+Locks the asset in the repository. This function is an alias of `checkAssetOut`.
 
-#### `cef.controller.unlockAsset(assetId, callback)`
+#### unlockAsset
+```js
+cef.controller.unlockAsset(
+	assetId: String, 
+	callback: Function(err: Object, success: Boolean)
+)
+```
 
-...
+Unlocks the asset in the repository. This function is an alias of `cancelAssetCheckOut`.
 
-#### `cef.controller.newDocument(callback)`
+#### newDocument
+```js
+cef.controller.newDocument(
+	callback: Function(err: Object, document: Document)
+)
+```
 
-...
+Create a new document in the host application
 
-#### `cef.controller.getPDFExportPresets(callback)`
-+ `callback <Function(err, presets)>`
-	+ `err <Object>` - The error message if one occurs
-	+ `presets <String[]>` -  A list of preset names
+#### getPDFExportPresets
+```js
+cef.controller.getPDFExportPresets(
+	callback: Function(err: Object, presets: String[])
+)
+```
 
 Retrieves the list of available PDF presets in the host application.
 
 *(Adobe Suite Only)*
 
-#### `cef.controller.updateDocumentMetadata(callback)`
+#### updateDocumentMetadata
+```js
+cef.controller.updateDocumentMetadata(
+	callback: Function()
+)
+```
 
-...
+Force the ESConnector to update from the repository the metadata of the active document and its links.
 
-#### `cef.controller.downloadDocument(assetId, callback)`
+#### downloadDocument
+```js
+cef.controller.downloadDocument(
+	assetId: String, 
+	callback: Function(err: Object, asset: Asset)
+)
+```
 
-...
+Downloads the asset `assetId` locally.
 
-#### `cef.controller.uploadDocument(path, callback)`
+*(Adobe Suite Only)*
 
-...
+#### uploadDocument
+```js
+cef.controller.uploadDocument(
+	path: String, 
+	callback: Function(err: Object, asset: Asset)
+)
+```
 
-#### `cef.controller.checkDocumentOut(assetId, callback)`
+Uploads the active document at the given `path`. The callback function will return new newly created or updated `asset`.
 
-...
+#### checkDocumentOut
+```js
+cef.controller.checkDocumentOut(
+	assetId: String, 
+	callback: Function(err: Object, document: Document)
+)
+```
 
-#### `cef.controller.checkDocumentIn(callback)`
+Downloads and open the document `assetId` in the host application. This function will also lock the document server side.
 
-...
+#### checkDocumentIn
+```js
+cef.controller.checkDocumentIn(
+	callback: Function(err: Object, asset: Asset)
+)
+```
 
-#### `cef.controller.downloadLink(linkId, callback)`
+Uploads a new version of the document on repository and check it in (unlock). The callback function will return new newly created or updated `asset`.
 
-...
+#### downloadLink
+```js
+cef.controller.downloadLink(
+	linkId: String, 
+	callback: Function(err: Object, asset: Asset)
+)
+```
 
-#### `cef.controller.uploadLink(linkId, path, callback)`
+Downloads the linked asset locally.
 
-...
+*(Adobe Suite Only)*
 
-#### `cef.controller.checkLinkOut(linkId, callback)`
+#### uploadLink
+```js
+cef.controller.uploadLink(
+	linkId: String, 
+	path: String,
+	callback: Function(err: Object, asset: Asset)
+)
+```
 
-...
+Uploads the local asset on the repository at the given `path`. The callback function will return new newly created or updated `asset`.
 
-#### `cef.controller.checkLinkIn(linkId, callback)`
+#### checkLinkOut
+```js
+cef.controller.checkLinkOut(
+	linkId: String, 
+	callback: Function(err: Object, success: Boolean)
+)
+```
 
-...
+Check the linked asset out by locking it server side.
 
-#### `cef.controller.linkNonHTTPAssets(folderId, callback)`
+#### checkLinkIn
+```js
+cef.controller.checkLinkIn(
+	linkId: String, 
+	callback: Function(err: Object, asset: Asset)
+)
+```
 
-...
+Uploads a new version of the asset on repository and check it in (unlock).
 
-#### `cef.controller.linkAsset(linkId, assetId, callback)`
+#### linkNonHTTPAssets
+```js
+cef.controller.linkNonHTTPAssets(
+	folderId, 
+	callback: Function(err: Object, count: Integer)
+)
+```
 
-...
+Attempt to link all non HTTP (local) links with the remote assets in the given repository folder `folderId`. The assets will be linked if their name match.
 
-#### `cef.controller.unlinkAsset(linkId, callback)`
+#### linkAsset
+```js
+cef.controller.linkAsset(
+	linkId: String, 
+	assetId: String, 
+	callback: Function(err: Object, success: Boolean)
+)
+```
 
-...	
+Assign the `assetId` to the given link. The link will then be consider as a remote asset.
 
-#### `cef.controller.showLink(linkId, callback)`
+#### unlinkAsset
+```js
+cef.controller.unlinkAsset(
+	linkId: String, 
+	callback: Function(err: Object, success: Boolean)
+)
+```
 
-...
+Removes all asset link informations from the given link. The link will then be consider as a regular local asset.
 
-#### `cef.controller.placeAsset(assetId, callback)`
+#### showLink
+```js
+cef.controller.showLink(
+	linkId: String, 
+	callback: Function(err: Object, success: Boolean)
+)
+```
 
-...
+Ask the host application to focus on the given link.
 
-#### `cef.controller.changeLinkRendition(linkId, rendition, callback)`
+#### placeAsset
+```js
+cef.controller.placeAsset(
+	assetId: String, 
+	callback: Function(err: Object, asset: Asset)
+)
+```
 
-...
+Download and place the asset `assetId` in the document. The callback function will return the information about the placed `asset`.
 
-#### `cef.controller.exportPDF(path [, preset], callback)`
-+ `path <String>` - The path in Asset Management System where to upload the exported PDF.
-+ `preset <String>` - Optional. The preset to use for the PDF export
-+ `callback <Function(err, asset)>`
-	+ `err <Object>` - The error message if one occurs, `null` otherwise.
-	+ `asset <Asset>` - An object repsenting the newly created or updated asset.
-	
-Exports a PDF version of the current document and upload it on the connected Asset Management System.
+#### changeLinkRendition
+```js
+cef.controller.changeLinkRendition(
+	linkId: String, 
+	rendition: String, 
+	callback: Function(err: Object, asset: Asset)
+)
+```
 
-#### `cef.controller.getCacheFolder()`
+Download the given rendition of the linked asset and replace it in the document. The callback function will return the information about the placed `asset`.
+
+#### exportPDF
+```js
+cef.controller.exportPDF(
+	path: String, 
+	preset?: String, 
+	callback: Function(err: Object, asset: Asset)
+)
+```
+
+Exports a PDF version of the current document using the provided `preset` and upload it at `path` on the connected repository. The callback function will return new newly created or updated `asset`.
+
+#### getCacheFolder
+```js
+cef.controller.getCacheFolder(): String
+```
 
 Returns the local path to the cache folder.
 
 *(Adobe Suite Only)*
 
-#### `cef.controller.getCacheSize(callback)`
-+ `callback <Function(err, size)>`
-	+ `err <Object>` - The error message if one occurs, `null` otherwise.
-	+ `presets <String[]>` -  The size of the folder in bytes
+#### getCacheSize
+```js
+cef.controller.getCacheSize(
+	callback: Function(err: Object, size: Long)
+)
+```
 
 Computes the total size of the cache folder.
 
 *(Adobe Suite Only)*
 
-#### `cef.controller.clearCache(callback)`
-+ `callback <Function(err)>`
-	+ `err <Object>` - The error message if one occurs, `null` otherwise.
+#### clearCache
+```js
+cef.controller.clearCache(
+	callback: Function(err: Object, success: Boolean)
+)
+```
 
 Removes recusively the content of the cache folder.
 
 *(Adobe Suite Only)*
+
+### Data Objects
+
+...
+
+#### Document
+
+```js
+Document: {
+	assetId: String,            // The asset Id in the repository
+	assetPath: String,          // The asset path in the repository
+	assetUrl: String,           // The asset Url 
+	cached: Boolean,            // True if the document is in the cache folder
+	checkOutId: String,         // The CMIS chekout Id
+	checkOutUser: String,       // The CMIS checkout user name
+	checkedOut: Boolean,        // True if the document is checked out
+	contentId: String,          // The CMIS content Id
+	dtime: Long,                // The date when the document has been downloaded in Epoch time
+	edited: Boolean,            // True if the document has been edited and not yet saved
+	hasEditedLinks: Boolean,    // True if the document contains some edited links (links that have changed locally)
+	hasMissingLinks: Boolean,   // True if the document contains some missing links (links that does not exists locally)
+	hasOutdatedLinks: Boolean,  // True if the doucment contains some outdated links (links that have changed remotely)
+	id: Integer,                // The Id of the document in the host application
+	lastestVersion: Boolean,    // True if the local document is the latest version of the asset
+	links: Link[],              // The asset links placed in the document
+	modified: Boolean,          // True if the document has been edited and not yet saved (same as edited)
+	mtime: Long,                // The date when the document has been modified in Epoch time
+	path: String,               // The local path of the document 
+	rendition: String,          // The current rendition of the document (must be dalim:highresolution)
+	repository: String,         // The name of the repository this document comes from
+	state: String,              // The current state of the document
+	version: String             // The current versio of the document
+}
+```
+
+#### Link
+
+#### Asset
+
+#### Rendition
