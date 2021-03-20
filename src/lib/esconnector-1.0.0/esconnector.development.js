@@ -3730,7 +3730,7 @@ function initEmulator(initCallback)
 
 		// Load Adobe CC Implementation
 		if(window.__adobe_cep__) {
-			loadLibraries(["../csinterface-9.4.0/csinterface.js"], (err) => {
+			loadLibraries(["./csinterface.js"], (err) => {
 				if(err) {
 					moduleInitCallback(err);
 				} else {
@@ -3753,6 +3753,8 @@ function initEmulator(initCallback)
 			initEmulator(moduleInitCallback);
 		}
 	};
+
+	module.controller.init = module.init;
 
 	return module;
 
