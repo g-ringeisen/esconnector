@@ -1,6 +1,11 @@
 # ES Connector
 
-...
+*Author: Gautier Ringeisen*
+<br>
+*Version: 1.0*
+
+The ES Connector is an Adobe Creative Cloud extension that allows you to connect and browse an ES server, place asset from that server in your Adobe documents and upload your creations on the repository directly from the Adobe applications.
+
 # Getting started
 
 ## Install from Adobe Exchange
@@ -120,21 +125,22 @@ The `Settings` tab allows you to set your preferences and manage the connection.
 
 ## Under the hood
 
-The ESConnector tends to use only standard functions of the host application to edit the document and its asset links. When hosted in an Adobe Creative Cloud applications, the ES Connnector will communicate with the application using the [CEP extension framework](https://github.com/Adobe-CEP/CEP-Resources)  and will performs all the Document and Asset links operations in [ExtendScript](https://www.adobe.com/devnet/scripting.html). 
+The ESConnector uses only standard functions of the host application to edit the document and its asset links. When hosted in an Adobe Creative Cloud applications, the ES Connnector will communicate with the application using the [CEP extension framework](https://github.com/Adobe-CEP/CEP-Resources)  and will performs all the Document and Asset links operations in [ExtendScript](https://www.adobe.com/devnet/scripting.html). 
 
 When an Asset coming from the repository is placed in the Document, a set of metadata will be associated to it in order to be able to keep trace of its origin, remote location, version, etc. <br>Depending on the host application, these metadata will be store in a InDesign Label or in an Illustrastor Tag. In both cases, it will be stored as a stringified JSON object and can be extracted as such.
 
 The metadata JSON object has the following properties:
-
-| Name         | Description |
-| ------------ | ----------- |
-| `assetId`    | The unique ID of the asset withing the repository                    | 
-| `assetUrl`   | An URL pointing to the asset on the repository                       |
-| `assetPath`  | The virtual path of the asset within the repository                  |
-| `contentId`  | The ID of the asset rendition placed in the document                 |
-| `rendition`  | The current rendition name of the asset as it appear in the document |
-| `repository` | The name of the repository the asset comes from                      |
-| `version`    | The version of the asset placed in the document                      |
+```js
+{
+	assetId: String,     // The unique ID of the asset withing the repository 
+	assetPath: String,   // The virtual path of the asset within the repository
+	assetUrl: String,    // An URL pointing to the asset on the repository
+	contentId: String,   // The ID of the asset rendition placed in the document  
+	rendition: String,   // The current rendition name of the asset as it appear in the document
+	repository: String,  // The name of the repository the asset comes from
+	version: String      // The version of the asset placed in the document
+}
+```
 
 These metadata can be extracted from the document as shown below. The method to extract the metadata will differ between InDesign and Illustrator.
 As the metadata are store as a stringified JSON, you will have to decode the value using a JSON library. The JSON encoding/decoding library `json.jsx` is provided with the ES Connector, you can find it in `src/lib/esconnector-1.0.0/`
@@ -210,7 +216,7 @@ From now on, all the changes you will do in the `src` folder will automatically 
 | `/src/gui/theme.jsx`            | The GUI theme builder |
 | `/src/gui/*.png`                | GUI images |
 | `/src/lib/babel-6.26.0/*`       | The babel library used to compile the interface in development mode and during the compilation. |
-| `/src/lib/csinterface-9.4.0/*`  | The Adobe CSInterface library to communicate with Adobe products from the extension. |
+| `/src/gui/esconnector-1.0.0/csinterface.js`             | The Adobe CSInterface library to communicate with Adobe products from the extension. |
 | `/src/gui/esconnector-1.0.0/esconnector.development.js` | The ESConnector controller |
 | `/src/gui/esconnector-1.0.0/host.jsx`                   | The ExtendScript libray used by the ES Connector to manipulate the documents |
 | `/src/gui/esconnector-1.0.0/json.jsx`                   | An ExtendScript implementation of a JSON encoder/decoder |
@@ -262,16 +268,48 @@ For instance if your ES server is accessible at `https://www.es-cloud.com/Esprit
 
 Note that the 2 archive `ESConnector_dev.zip` or `ESConnector_prd.zip` can also be deployed on a J2EE container like Tomcat. You simply have to copy one of them as `ESConnector.war` in the `webapp` folder.
 
-## Controller Object Reference
+### How to integrate the ESConnector controller in your own GUI
 
-...
-```
-cef.controller
-sd
-```
-...
+The only library you need have the ESConnector controller in your GUI is the `esconnector-1.0.0`. You will have to expose the complete folder on you webserver and add the `esconnector.production.js` in your HTML interface.
 
-### Controller functions
+Then call the function `cef.init` to wait for the ES Connector to initialize.
+
+```html
+<html>
+	<head>
+		<script type="text/javascript" src="./esconnector-1.0.0/esconnector.production.js"></script>
+		<script>
+			cef.controller.init(function() {
+				
+				console.log(cef.controller.getActiveDocument().name);
+
+			});
+		<script>
+	</head>
+	<body>
+		<!-- ... -->
+	</body>
+</html>
+```
+
+### ESConnector Controller
+
+All the functions you need to manipulate the document in the host application and communicate with th repository are avaiable in the Javascript object `cef.controller`.
+
+#### init
+
+```js
+cef.controller.init(
+	options?: {
+		repositoryType: String,     // Default to ES (This option is useless for now)
+		repositoryBaseUrl: String   // default to window.location, can be changed to an other ES server.
+	},
+	callback: Function(err: Object, success: Boolean)
+);
+```
+
+Initialize the ESConnector.
+If you want the ESConnector to automactially connect a specific repository, provide its base URL in the options.
 
 #### getActiveDocument
 ```js
@@ -379,9 +417,16 @@ cef.controller.cancelAssetCheckOut(
 
 Cancel the asset checkout status and unlock it server side.
 
-#### `cef.controller.checkAssetIn(assetId, [data,] callback)`
+#### checkAssetIn
+```js
+cef.controller.checkAssetIn(
+	assetId: String, 
+	data?: ArrayBuffer | Blob | File | String,
+	callback: Function(err: Object, asset: Asset
+)
+```
 
-...	
+Check the asset `assetId` in and optionally uploads a new version of it. The asset will be unlocked.
 
 #### lockAsset
 ```js
@@ -622,40 +667,146 @@ Removes recusively the content of the cache folder.
 
 ### Data Objects
 
-...
+These are the description of the Javascript objects returned by the Controller functions.
 
 #### Document
 
+A Javascript object representing a document open in the host application.
+
 ```js
 {
-	assetId: String,            // The asset Id in the repository
-	assetPath: String,          // The asset path in the repository
-	assetUrl: String,           // The asset Url 
-	cached: Boolean,            // True if the document is in the cache folder
-	checkOutId: String,         // The CMIS chekout Id
-	checkOutUser: String,       // The CMIS checkout user name
-	checkedOut: Boolean,        // True if the document is checked out
-	contentId: String,          // The CMIS content Id
-	dtime: Long,                // The date when the document has been downloaded in Epoch time
-	edited: Boolean,            // True if the document has been edited and not yet saved
-	hasEditedLinks: Boolean,    // True if the document contains some edited links (links that have changed locally)
-	hasMissingLinks: Boolean,   // True if the document contains some missing links (links that does not exists locally)
-	hasOutdatedLinks: Boolean,  // True if the doucment contains some outdated links (links that have changed remotely)
-	id: Integer,                // The Id of the document in the host application
-	lastestVersion: Boolean,    // True if the local document is the latest version of the asset
-	links: Link[],              // The asset links placed in the document
-	modified: Boolean,          // True if the document has been edited and not yet saved (same as edited)
-	mtime: Long,                // The date when the document has been modified in Epoch time
-	path: String,               // The local path of the document 
-	rendition: String,          // The current rendition of the document (must be dalim:highresolution)
-	repository: String,         // The name of the repository this document comes from
-	state: String,              // The current state of the document
-	version: String             // The current versio of the document
-}: Document
+	assetId: String,                       // The asset Id in the repository
+	assetPath: String,                     // The asset path in the repository
+	assetUrl: String,                      // The asset Url 
+	cached: Boolean,                       // True if the document is in the cache folder
+	checkOutId: String,                    // The CMIS chekout Id
+	checkOutUser: String,                  // The CMIS checkout user name
+	checkedOut: Boolean,                   // True if the document is checked out
+	contentId: String,                     // The CMIS content Id
+	dtime: Long,                           // The date when the document has been downloaded in Epoch time
+	edited: Boolean,                       // True if the document has been edited and not yet saved
+	hasEditedLinks: Boolean,               // True if the document contains some edited links (links that have changed locally)
+	hasMissingLinks: Boolean,              // True if the document contains some missing links (links that does not exists locally)
+	hasOutdatedLinks: Boolean,             // True if the doucment contains some outdated links (links that have changed remotely)
+	id: Integer,                           // The Id of the document in the host application
+	lastestVersion: Boolean,               // True if the local document is the latest version of the asset
+	links: Link[],                         // The asset links placed in the document
+	modified: Boolean,                     // True if the document has been edited and not yet saved (same as edited)
+	mtime: Long,                           // The date when the document has been modified in Epoch time
+	name: String,                          // The name of the document
+	outdated: Boolean,                     // True if the document has changed on the repository since it was downloaded 
+	path: String,                          // The local path of the document 
+	rendition: String,                     // The current rendition of the document (must be dalim:highresolution)
+	repository: String,                    // The name of the repository this document comes from
+	state: String,                         // The current state of the document
+	version: String                        // The current version of the document
+}
 ```
 
 #### Link
 
+A Javascript object representing an asset link placed in a document
+
+```js
+{
+	assetId: String,                       // The asset Id in the repository
+	assetPath: String,                     // The asset path in the repository
+	assetUrl: String,                      // The asset Url 
+	cached: Boolean,                       // True if the document is in the cache folder
+	checkOutId: String,                    // The CMIS chekout Id
+	checkOutUser: String,                  // The CMIS checkout user name
+	checkedOut: Boolean,                   // True if the asset is checked out
+	contentId: String,                     // The CMIS content Id
+	dtime: Long,                           // The date when the asset has been downloaded in Epoch time
+	edited: Boolean,                       // True if the asset has been modified on the disk
+	embedded: Boolean,                     // True if the asset is embeded in the document
+	id: Integer,                           // The Id of the link within the document in the host application
+	index: Integer,                        // The position of this link in the list of links
+	lastestVersion: Boolean,               // True if the local asset is the latest version of the asset
+	missing: Boolean,                      // True if the local file is missing 
+	mtime: Long,                           // The date when the asset has been modified in Epoch time
+	name: String,                          // The name of the asset link
+	outdated: Boolean,                     // True if the asset has changed on the repository since it was downloaded 
+	page: String,                          // The page number or page name where this link is placed in the document 
+	path: String,                          // The local path of the asset
+	rendition: String,                     // The current rendition of the aseet
+	repository: String,                    // The name of the repository this asset comes from
+	selected: Boolean,                     // True if the document is currently selected in the host application
+	size: Long,                            // The size of the asset 
+	state: String,                         // The current state of the link
+	thumbnail: String,                     // The Url of the thumbnail of this asset
+	version: String                        // The current version of the asset
+}
+```
+
 #### Asset
 
-#### Rendition
+A Javascript object representing an asset from a repository.
+
+```js
+{
+	checkOutId: String,                    // The CMIS chekout Id
+	checkOutUser: String,                  // The CMIS checkout user name
+	checkedOut: Boolean,                   // True if the asset is checked out
+	contentId: String,                     // The CMIS content Id
+	contentLength: Long,                   // The underlying asset content stream length
+	contentName: String,                   // The underlying asset content stream name
+	contentType: String,                   // The underlying asset content stream mime type
+	contentURL: String,                    // The asset content stream URL
+	created: Long,                         // The asset creation date in Epoch time
+	hasChildren: Boolean,                  // True if this asset has children. If the asset is a file, true means the asset has some versions
+	id: String,                            // The unique Id of the asset in the repository
+	lastestVersion: Boolean,               // True if this asset is the latest version
+	name: String,                          // The name of the asset as seen in the repository
+	modified: Long,                        // The last modification date of the asset in Epoch time
+	parentId: String,                      // The Id of the parent of this asset
+	path: String,                          // The path of the asset within the repository
+	permissions: Permission,               // The premissions allowed on this asset for the current user
+	renditions: Map<String,AssetRendition> // A map of available asset renditions where the key if the rendition name
+	type: String,                          // The type of asset (Document | Folder)
+	url: String,                           // The url of this asset
+	versionSerieId: String,                // The CMIS version servie Id
+	version: String,                       // The version of this asset
+	versions: AssetVersion[]               // A list of available asset versions
+}
+```
+
+#### AssetRendition
+
+A Javascript object representing a rendtion of an asset. All the properties that are not in this object default to the related asset.
+
+```js
+{
+	contentId: String,                     // The content stream Id
+	contentURL: String,                    // The content stream URL
+	contentName: String,                   // The content stream name
+	contentType: String,                   // The content stream mime type
+	contentLength: Long                    // The content stream length
+}
+```
+
+#### AssetVersion
+
+A Javascript object representing a version of an asset. All the properties that are not in this object default to the related asset.
+
+```js
+{
+	id: String,                             // The unique asset version Id
+	version: String,                        // The version number
+	contentId: String,                      // The content stream Id 
+	contentURL: String,                     // The content stream URL
+	hasChildren: Boolean,                   // Must be false
+	renditions: Map<String,AssetRendition>  // A map of available renditions where the key if the rendition name
+}
+```
+
+#### Permissions
+
+A Javascript object representing a set of premissions.
+
+```js
+{
+	canCreateDocument: Boolean,             // True if it is possible to create documents withing this asset
+	canCreateFolder: Boolean                // True if it is possible to create folders withing this asset
+}
+```
