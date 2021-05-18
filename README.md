@@ -230,6 +230,9 @@ From now on, all the changes you will do in the `src` folder will automatically 
 | `/src/index.html`               | The index html page for the developement environement |
 | `/src/index.production.html`    | The index html page for the production environement |
 | `/src/logout.html`              | The logout page called when the user logs out the connector |
+| `/ouput/ESConnector_dev.zip`    | A development version of the ES Connector that can be distributed and installed for testing purpose. |
+| `/output/ESConnector_prd.zip`    | A production version of the ES Connector that can be distributed and published on Adobe Exchange. |
+| `/output/ESConnector_install.zip` | The production version of the ES Connector along with an installer for Mac OS and Windows. |
 | `/build.sh`                     | The build script |
 | `/install_mac`                  | The Mac OS install script |
 | `/install_win.bat`              | The Windows install script |
@@ -254,13 +257,13 @@ To build the ES Connector you simply have to execute the `build.sh` script sitti
 ```sh
 $ ./build.sh
 ```
-As a result of the build process, the script will produce 3 ZIP archives in the `build` folder: 
+As a result of the build process, the script will produce 3 ZIP archives in the `output` folder: 
 
 | ZIP Archive                      | Content                   |
 | -------------------------------- | ------------------------- |
-| `./build/ESConnector_dev.zip`    | A development version of the ES Connector that can be distributed and installed for testing purpose. It has the debug mode activated. This archive is basically just a ZIP of the `src` folder. |
-| `./build/ESConnector_prd.zip`    | A production version of the ES Connector that can be distributed and published on Adobe Exchange. All the sources are converted to ECMAScriptn 5 and compressed. The debug mode is not activated. |
-| `./build/ESConnector_install.zip` | This archive contains the production version of the ES Connector along with an installer for Mac OS and Windows. The prupose of the archive is to be able to distribute the ES Connector out of the Adobe Exchange plateform |
+| `./ouput/ESConnector_dev.zip`    | A development version of the ES Connector that can be distributed and installed for testing purpose. It has the debug mode activated. This archive is basically just a ZIP of the `src` folder. |
+| `./output/ESConnector_prd.zip`    | A production version of the ES Connector that can be distributed and published on Adobe Exchange. All the sources are converted to ECMAScriptn 5 and compressed. The debug mode is not activated. |
+| `./output/ESConnector_install.zip` | This archive contains the production version of the ES Connector along with an installer for Mac OS and Windows. The prupose of the archive is to be able to distribute the ES Connector out of the Adobe Exchange plateform |
 
 ### How to deploy the ES Connector 
 
