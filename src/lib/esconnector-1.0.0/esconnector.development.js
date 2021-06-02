@@ -21,7 +21,7 @@ window.cef = (function() {
 	 * CONST
 	 */
 	const CEF_VERSION           = "1.0"
-	const CEF_BUILD             = "210320"
+	const CEF_BUILD             = "210602"
 	const CEF_CREATOR           = "Gautier RINGEISEN"
 	const CEF_CREATORMAIL       = "gautier.ringeisen@gmail.com"
 	const CEF_COPYRIGHT         = "Copyright \u00A9 2020, DALIM SOFTARE GmbH"
