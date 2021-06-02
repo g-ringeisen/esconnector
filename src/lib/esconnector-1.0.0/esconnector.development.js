@@ -573,6 +573,18 @@ window.cef = (function() {
 				return this.curl(url, options, callback);
 			},
 	
+			head: function(url, options, callback) {
+				
+				if(typeof options === 'function') {
+					callback = options;
+					options = {};
+				}
+				
+				options.method = 'HEAD';
+	
+				return this.curl(url, options, callback);
+			},
+
 			post: function(url, options, callback) {
 	
 				if(typeof options === 'function') {
@@ -1474,9 +1486,11 @@ window.cef = (function() {
 			// ES OpenID Resolver
 			function(baseUrl, callback) {
 				var endpoint = baseUrl + "/ESConnector/index.html";
-				module.net.wget(endpoint, function(error, response, request) {
+				module.net.head(endpoint, function(error, response, request) {
 					if(error) {
 						callback(error, null);
+					} else if(request.responseURL.indexOf("/Esprit/public/Login.jsp") > 0) {
+						callback(null, null);
 					} else {
 						callback(null, endpoint + "?ts=" + Date.now());
 					}
@@ -3524,19 +3538,23 @@ function initMSOffice(initCallback)
 
 		init: function(callback) {
 
-			Office.onReady();
+			Office.onReady(function(info) {
 
-			module.host.getDocumentInfo(null, (err, docinfo) => {
-				if(err) {
-					console.error(err);
-					callback(err);
-				} else {
-					if(docinfo) {
-						module.host.document = docinfo;
-						module.host.emit("documentChanged", module.host.document);
+				module.host.name     = info.host;
+				module.host.platform = info.platform;
+
+				module.host.getDocumentInfo((err, docinfo) => {
+					if(err) {
+						console.error(err);
+						callback(err);
+					} else {
+						if(docinfo) {
+							module.host.document = docinfo;
+							module.host.emit("documentChanged", module.host.document);
+						}
 					}
-				}
-				callback(null);
+					callback(null);
+				});
 			});
 		},
 
@@ -3573,11 +3591,14 @@ function initMSOffice(initCallback)
 		},
 
 		getDocumentInfo: function(callback) {
+
+			var document = null;
+
 			Word.run(function (context) {
-				var document = context.document;
-				
-				context.sync();
-				return {name: "Test.docx", doc: document};
+				document = context.document;
+				document.load();
+				document.properties.load();
+				return context.sync();
 			})
 			.then(function(result) {
 				callback(null, result);
