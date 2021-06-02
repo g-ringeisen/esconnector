@@ -2729,7 +2729,7 @@ function initAdobeCC(initCallback)
 		} else if(module.host.name == "ILST") {
 			supportedTypes = [/application\/(vnd.adobe.)?illustrator/, /application\/(pdf|postscript)/]
 		} else if(module.host.name == "PHXS" || module.host.name == "PSPX") {
-			supportedTypes = [/image\/.*/, /application\/(vnd.adobe.)?photoshop/, "application/rdf+xml"]
+			supportedTypes = [/image\/.*/, /tiff\/.*/, /application\/(vnd.adobe.)?photoshop/, "application/rdf+xml"]
 		}
 
 		/* TEMP - Search does not return mime type */
@@ -2750,9 +2750,9 @@ function initAdobeCC(initCallback)
 	module.controller.isSupportedLinkType = function(type) {
 		var supportedTypes = [];
 		if(module.host.name == "IDSN") {
-			supportedTypes = [/image\/.*/, /application\/(vnd.adobe.)?(illustrator|photoshop)/, /application\/(pdf|postscript)/]
+			supportedTypes = [/image\/.*/, /tiff\/.*/, /application\/(vnd.adobe.)?(illustrator|photoshop)/, /application\/(pdf|postscript)/]
 		} else if(module.host.name == "ILST") {
-			supportedTypes = [/image\/.*/, /application\/(vnd.adobe.)?illustrator/, /application\/(pdf|postscript)/]
+			supportedTypes = [/image\/.*/, /tiff\/.*/, /application\/(vnd.adobe.)?illustrator/, /application\/(pdf|postscript)/]
 		} else if(module.host.name == "PSPX") {
 			supportedTypes = []
 		}

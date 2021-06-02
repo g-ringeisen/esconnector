@@ -106,7 +106,7 @@
 	function readableType(type) {
 		if(!type)
 			type = "unknown";
-		var rtype = cef.locale.get(type);
+		var rtype = cef.locale.get(type.toLowerCase());
 		if(rtype == type && type.indexOf("/") > 0)
 			rtype = type.split("/")[1].toUpperCase();
 		return rtype;

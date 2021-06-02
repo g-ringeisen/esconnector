@@ -148,7 +148,8 @@ cef.locale.define("C", {
 	"application/postscript": "Postscript",
 	"text/plain": "Text",
 	"video/quicktime": "QuickTime Video",
-	"application/vnd.openxmlformats-officedocument.wordprocessingml.document": "Word document"
+	"application/vnd.openxmlformats-officedocument.wordprocessingml.document": "Word document",
+	"tiff/it": "TIFF-IT"
 });
 
 cef.locale.define("en", {
