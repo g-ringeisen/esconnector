@@ -70,7 +70,7 @@ cd - > /dev/null
 echo 
 echo "Build Beta Distribution Package"
 cd "${root_dir}"
-zip "${output_dir}/${pkgname}_install.zip" "install_mac" "install_win.bat" "${output_dir}/${pkgname}_prd.zip" > /dev/null
+zip -r "${output_dir}/${pkgname}_install.zip" "install_mac" "install_win.bat" "build" > /dev/null
 cd - > /dev/null
 
 echo 
