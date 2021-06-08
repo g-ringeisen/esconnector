@@ -20,7 +20,7 @@ mkdir -p "${build_dir}"
 npm install -g 'jsxbin' '@babel/core' '@babel/preset-react' '@babel/plugin-transform-modules-commonjs'
 
 ## BUILD LIB
-for libname in "csinterface-9.4.0" "material-ui-4.9.12" "react-16.13"
+for libname in "esconnector-1.0.0" "material-ui-4.9.12" "react-16.13"
 do
 	echo "Build library : ${libname}"
 
