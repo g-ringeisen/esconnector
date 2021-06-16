@@ -2595,6 +2595,26 @@ function initAdobeCC(initCallback)
 	});
 
 	/**
+	 * THEME
+	 */
+	module.theme = {
+		primary: {alpha: 255, green: 255, blue: 255, red: 255},
+		secondary: {alpha: 153, green: 255, blue: 255, red: 255},
+		background: _hostInfo.appSkinInfo.appBarBackgroundColorSRGB.color,
+		highlight:  _hostInfo.appSkinInfo.systemHighlightColor.color,
+		fontSize:   _hostInfo.appSkinInfo.baseFontSize,
+		fontFamily: [
+			'adobe-clean', 
+			'-apple-system', 
+			'system-ui',
+			'Roboto', 
+			'Helvetica',
+			'Arial',
+			'sans-serif'
+		].join(',') // _hostInfo.appSkinInfo.baseFontFamily
+	}
+
+	/**
 	 * CONTROLLER
 	 */
 	function _updateAssetFileMetadata(path, asset, extramdt) {
@@ -3610,6 +3630,26 @@ function initMSOffice(initCallback)
 
 		// TODO
 	});
+
+	/**
+	 * Theme
+	 */
+	module.theme = {
+		primary:    {alpha: 255, green: 37, blue: 37, red: 37},
+		secondary:  {alpha: 153, green: 37, blue: 37, red: 37},
+		background: {alpha: 255, green: 242, blue: 242, red: 242},
+		highlight:  {alpha: 255, green: 37, blue: 37, red: 37},
+		fontSize:   10,
+		fontFamily: [
+			'adobe-clean', 
+			'-apple-system', 
+			'system-ui',
+			'Roboto', 
+			'Helvetica',
+			'Arial',
+			'sans-serif'
+		].join(',') // _hostInfo.appSkinInfo.baseFontFamily
+	}
 
 	/**
 	 * Controller
